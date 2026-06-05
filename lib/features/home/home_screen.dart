@@ -558,21 +558,23 @@ class _DailyCard extends StatelessWidget {
                         color: Colors.white,
                         size: 18),
                     const SizedBox(width: 6),
-                    Text(L('THỬ THÁCH HÔM NAY', "TODAY'S CHALLENGE"),
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            letterSpacing: 1.2,
-                            fontWeight: FontWeight.w700)),
-                    if (done) ...[
-                      const Spacer(),
+                    Expanded(
+                      child: Text(L('THỬ THÁCH HÔM NAY', "TODAY'S CHALLENGE"),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              letterSpacing: 1.2,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                    if (done)
                       Text(L('HOÀN THÀNH', 'DONE'),
                           style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
                               letterSpacing: 1,
                               fontWeight: FontWeight.w800)),
-                    ],
                   ],
                 ),
                 const SizedBox(height: Insets.sm),

@@ -3,10 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mindforge/core/challenge.dart';
 import 'package:mindforge/core/difficulty.dart';
 import 'package:mindforge/core/i18n/app_lang.dart';
 import 'package:mindforge/core/theme/app_theme.dart';
 import 'package:mindforge/data/models/game_info.dart';
+import 'package:mindforge/shared/widgets/result_overlay.dart';
 import 'package:mindforge/features/games/anagram/anagram_screen.dart';
 import 'package:mindforge/features/games/card_match/card_match_screen.dart';
 import 'package:mindforge/features/games/counting_dots/counting_dots_screen.dart';
@@ -28,6 +30,8 @@ import 'package:mindforge/features/games/trail_maker/trail_maker_screen.dart';
 import 'package:mindforge/main.dart';
 
 Widget _host(Widget child) => MaterialApp(theme: AppTheme.dark, home: child);
+
+void _noop() {}
 
 void main() {
   testWidgets('Home renders title, cards and difficulty selector',
@@ -105,6 +109,45 @@ void main() {
     expect(GameDuration.normal.apply(60), 60);
 
     GameSettings.duration.value = GameDuration.normal;
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  test('Daily challenge targets a real game and tracks the best score', () {
+    final challenge = ChallengeStore.today();
+    expect(challenge.game.available, isTrue);
+    expect(challenge.target, greaterThan(0));
+
+    ChallengeStore.report(challenge.game.id, 12);
+    expect(ChallengeStore.bestFor(challenge.game.id), greaterThanOrEqualTo(12));
+    // A lower score never lowers the best nor bumps the revision.
+    final rev = ChallengeStore.revision.value;
+    ChallengeStore.report(challenge.game.id, 1);
+    expect(ChallengeStore.revision.value, rev);
+  });
+
+  testWidgets('ResultOverlay reports its score through GameScope',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(brightness: Brightness.dark, useMaterial3: true),
+      home: const GameScope(
+        gameId: 'unit_test_game',
+        child: Stack(
+          children: [
+            ResultOverlay(
+              title: 'Done',
+              score: 777,
+              scoreSuffix: 'pts',
+              stats: [],
+              accent: Colors.cyan,
+              onRetry: _noop,
+              onClose: _noop,
+            ),
+          ],
+        ),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(ChallengeStore.bestFor('unit_test_game'), 777);
     await tester.pump(const Duration(seconds: 3));
   });
 
