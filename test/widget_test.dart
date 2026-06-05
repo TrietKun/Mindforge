@@ -293,16 +293,16 @@ void main() {
         .pumpWidget(_host(OptionQuizScreen(spec: quizSpecFor('arrow_flanker')!)));
     await tester.pump(const Duration(milliseconds: 120));
 
-    // Tap both answer buttons across rounds so the win burst, the wrong cross
-    // flash and the screen-shake all get exercised. The buttons reuse the arrow
-    // sprites, so there are flanker arrows of the same image too — tap the last
-    // match (the bottom answer button).
-    final left =
-        find.image(const AssetImage('assets/games/arrow_flanker/arrow_left.png'));
-    final right = find
-        .image(const AssetImage('assets/games/arrow_flanker/arrow_right.png'));
+    // The answer buttons reuse the arrow sprites (also shown as prompt
+    // flankers), so target the option buttons by their GestureDetector ancestor.
+    Finder optionButton(String side) => find.ancestor(
+          of: find.image(
+              AssetImage('assets/games/arrow_flanker/arrow_$side.png')),
+          matching: find.byType(GestureDetector),
+        );
     for (var i = 0; i < 6; i++) {
-      await tester.tap(i.isEven ? left : right, warnIfMissed: false);
+      await tester.tap(optionButton(i.isEven ? 'left' : 'right').first,
+          warnIfMissed: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 120));
       expect(tester.takeException(), isNull);

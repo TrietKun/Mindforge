@@ -273,8 +273,12 @@ Widget _flankerWinFx(int id, int combo, int answerIndex) {
                 .fadeIn(duration: 120.ms)
                 .scaleXY(begin: 0.5, end: 1.15, duration: 340.ms, curve: Curves.easeOut)
                 .fadeOut(delay: 220.ms, duration: 260.ms),
-          // streak shooting toward the answered side
-          Image.asset('$_flankerDir/streak.png', width: 150)
+          // streak shooting toward the answered side — mirror the chevron for a
+          // left answer so it points the way it travels (was pointing backwards).
+          Transform.scale(
+            scaleX: leftward ? -1.0 : 1.0,
+            child: Image.asset('$_flankerDir/streak.png', width: 150),
+          )
               .animate(key: ValueKey('streak$id'))
               .slideX(
                   begin: leftward ? 1.6 : -1.6,
