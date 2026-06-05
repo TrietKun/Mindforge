@@ -382,4 +382,29 @@ void main() {
       await tester.pump(const Duration(milliseconds: 820));
     }
   });
+
+  testWidgets('Bigger Sum (sprite scale + framed buttons + FX) builds & taps',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 880);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester
+        .pumpWidget(_host(OptionQuizScreen(spec: quizSpecFor('bigger_sum')!)));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    // The two answer buttons render text over the eq_frame sprite.
+    final buttons = find
+        .image(const AssetImage('assets/games/bigger_sum/eq_frame.png'));
+    expect(buttons, findsNWidgets(2));
+    for (var i = 0; i < 5; i++) {
+      await tester.tap(buttons.first, warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 820));
+    }
+  });
 }

@@ -532,14 +532,14 @@ class _DailyCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  game.color.withValues(alpha: 0.92),
-                  AppPalette.focus.withValues(alpha: 0.88),
+                  AppPalette.memory.withValues(alpha: 0.9),
+                  AppPalette.focus.withValues(alpha: 0.9),
                 ],
               ),
               borderRadius: BorderRadius.circular(Radii.lg),
               boxShadow: [
                 BoxShadow(
-                  color: game.color.withValues(alpha: 0.35),
+                  color: AppPalette.focus.withValues(alpha: 0.35),
                   blurRadius: 34,
                   spreadRadius: -10,
                   offset: const Offset(0, 14),

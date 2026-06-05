@@ -53,6 +53,7 @@ class QuizFx {
     this.shimmer,
     this.screenShake = false,
     this.winBuilder,
+    this.optionFrame,
   });
 
   final String? header;
@@ -60,6 +61,9 @@ class QuizFx {
   final String? cross;
   final String? shimmer;
   final bool screenShake;
+
+  /// Optional sprite used as the background of text answer buttons (BoxFit.fill).
+  final String? optionFrame;
 
   /// When set, fully replaces the default correct-answer FX. Receives the spark
   /// id (changes per correct answer), the current combo and the answered option
@@ -326,6 +330,7 @@ class _OptionQuizScreenState extends State<OptionQuizScreen>
                       accent: _spec.accent,
                       perRow: _spec.optionsPerRow,
                       wrongIndex: _wrongIndex,
+                      frame: _spec.fx?.optionFrame,
                       onTap: _answer,
                     ),
                   ],
@@ -398,12 +403,14 @@ class _Options extends StatelessWidget {
     required this.perRow,
     required this.wrongIndex,
     required this.onTap,
+    this.frame,
   });
 
   final QuizRound round;
   final Color accent;
   final int perRow;
   final int? wrongIndex;
+  final String? frame;
   final void Function(int index) onTap;
 
   @override
@@ -419,6 +426,7 @@ class _Options extends StatelessWidget {
                 accent: accent,
                 isWrong: wrongIndex == i,
                 fullWidth: true,
+                frame: frame,
                 onTap: () => onTap(i),
               ),
             ),
@@ -441,6 +449,7 @@ class _Options extends StatelessWidget {
             accent: accent,
             isWrong: wrongIndex == i,
             fullWidth: false,
+            frame: frame,
             onTap: () => onTap(i),
           ),
       ],
@@ -455,11 +464,13 @@ class _OptionButton extends StatefulWidget {
     required this.isWrong,
     required this.fullWidth,
     required this.onTap,
+    this.frame,
   });
   final QuizOption option;
   final Color accent;
   final bool isWrong;
   final bool fullWidth;
+  final String? frame;
   final VoidCallback onTap;
 
   @override
@@ -482,6 +493,42 @@ class _OptionButtonState extends State<_OptionButton> {
         child: Padding(
           padding: const EdgeInsets.all(6),
           child: Image.asset(option.asset!, fit: BoxFit.contain),
+        ),
+      );
+    } else if (!isColor && widget.frame != null) {
+      // Text on a sprite-framed button (e.g. the eq_frame bar).
+      face = SizedBox(
+        width: widget.fullWidth ? double.infinity : null,
+        height: widget.fullWidth ? 64 : null,
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: Image.asset(widget.frame!, fit: BoxFit.fill),
+            ),
+            if (widget.isWrong)
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                    color: AppPalette.danger.withValues(alpha: 0.24),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Text(
+                option.text ?? '',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
         ),
       );
     } else {

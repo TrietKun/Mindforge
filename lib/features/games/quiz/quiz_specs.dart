@@ -29,10 +29,112 @@ QuizRound _assemble(String answer, List<String> distractors, {Object? data}) {
 }
 
 // ── Math: Bigger Sum ────────────────────────────────────────────────────────
+const _bsDir = 'assets/games/bigger_sum';
+
+/// Tasteful "right side wins" burst: glow + ring/pop-ring ripples, a quick
+/// burst, an up-arrow rising as the focal point with a check, and corner
+/// sparkles. Higher combo adds a spark.
+Widget _biggerSumWinFx(int id, int combo, int answerIndex) {
+  final strong = combo >= 3;
+  Widget at(Alignment a, Widget w) => Align(alignment: a, child: w);
+  return Center(
+    child: SizedBox(
+      width: 280,
+      height: 280,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Image.asset('$_bsDir/halo.png', width: 200)
+              .animate(key: ValueKey('halo$id'))
+              .fadeIn(duration: 140.ms)
+              .scaleXY(begin: 0.6, end: 1.15, duration: 380.ms, curve: Curves.easeOut)
+              .fadeOut(delay: 300.ms, duration: 300.ms),
+          Image.asset('$_bsDir/ring.png', width: 130)
+              .animate(key: ValueKey('ring$id'))
+              .scaleXY(begin: 0.3, end: 1.7, duration: 520.ms, curve: Curves.easeOut)
+              .fadeOut(delay: 200.ms, duration: 320.ms),
+          Image.asset('$_bsDir/pop_ring.png', width: 150)
+              .animate(key: ValueKey('pop$id'))
+              .scaleXY(begin: 0.4, end: 1.9, duration: 620.ms, curve: Curves.easeOut)
+              .fadeOut(delay: 260.ms, duration: 340.ms),
+          Image.asset('$_bsDir/burst.png', width: 168)
+              .animate(key: ValueKey('burst$id'))
+              .scaleXY(begin: 0.4, end: 1.0, duration: 260.ms, curve: Curves.easeOut)
+              .fadeOut(delay: 120.ms, duration: 240.ms),
+          Image.asset('$_bsDir/confetti.png', width: 200)
+              .animate(key: ValueKey('conf$id'))
+              .scaleXY(begin: 0.4, end: 1.1, delay: 120.ms, duration: 340.ms, curve: Curves.easeOut)
+              .fadeOut(delay: 360.ms, duration: 280.ms),
+          if (strong)
+            Image.asset('$_bsDir/spark.png', width: 228)
+                .animate(key: ValueKey('spark$id'))
+                .fadeIn(duration: 120.ms)
+                .scaleXY(begin: 0.5, end: 1.15, duration: 340.ms, curve: Curves.easeOut)
+                .fadeOut(delay: 220.ms, duration: 260.ms),
+          // up-arrow rising — the bigger side wins
+          Image.asset('$_bsDir/up_arrow.png', width: 62)
+              .animate(key: ValueKey('up$id'))
+              .fadeIn(duration: 120.ms)
+              .slideY(begin: 0.9, end: -0.4, duration: 480.ms, curve: Curves.easeOut)
+              .fadeOut(delay: 320.ms, duration: 200.ms),
+          // check — focal confirmation
+          Image.asset('$_bsDir/check.png', width: 76)
+              .animate(key: ValueKey('chk$id'))
+              .scale(
+                  begin: const Offset(0.3, 0.3),
+                  end: const Offset(1, 1),
+                  delay: 80.ms,
+                  duration: 360.ms,
+                  curve: Curves.easeOutBack)
+              .then(delay: 220.ms)
+              .fadeOut(duration: 240.ms),
+          at(
+            const Alignment(-0.72, -0.55),
+            Image.asset('$_bsDir/sparkle.png', width: 46)
+                .animate(key: ValueKey('s1$id'))
+                .scale(
+                    begin: const Offset(0.2, 0.2),
+                    end: const Offset(1, 1),
+                    delay: 80.ms,
+                    duration: 260.ms,
+                    curve: Curves.easeOutBack)
+                .then(delay: 120.ms)
+                .fadeOut(duration: 200.ms),
+          ),
+          at(
+            const Alignment(0.72, -0.42),
+            Image.asset('$_bsDir/sparkle.png', width: 38)
+                .animate(key: ValueKey('s2$id'))
+                .scale(
+                    begin: const Offset(0.2, 0.2),
+                    end: const Offset(1, 1),
+                    delay: 170.ms,
+                    duration: 260.ms,
+                    curve: Curves.easeOutBack)
+                .then(delay: 80.ms)
+                .fadeOut(duration: 200.ms),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 final _biggerSum = QuizSpec(
   title: 'Vế Lớn Hơn',
   accent: AppPalette.math,
-  iconAsset: 'assets/kit/trophy_cyan.png',
+  iconAsset: '$_bsDir/trophy.png',
+  sparkAsset: '$_bsDir/sparkle.png',
+  fx: QuizFx(
+    header: '$_bsDir/owl_mascot.png',
+    headerHalo: '$_bsDir/halo.png',
+    cross: '$_bsDir/cross.png',
+    shimmer: '$_bsDir/shimmer.png',
+    optionFrame: '$_bsDir/eq_frame.png',
+    screenShake: true,
+    winBuilder: _biggerSumWinFx,
+  ),
   icon: Icons.balance_rounded,
   instruction: () => L('Vế nào có kết quả LỚN HƠN?', 'Which side is BIGGER?'),
   optionsPerRow: 1,
@@ -61,8 +163,11 @@ final _biggerSum = QuizSpec(
       answerIndex: answerIndex,
     );
   },
-  buildPrompt: (context, round) => const Icon(Icons.balance_rounded,
-      color: AppPalette.math, size: 52),
+  // A gently swaying balance scale sets the "which weighs more" mood.
+  buildPrompt: (context, round) => Image.asset('$_bsDir/scale.png',
+          width: 116, height: 88, fit: BoxFit.contain)
+      .animate(onPlay: (c) => c.repeat(reverse: true))
+      .rotate(begin: -0.02, end: 0.02, duration: 1600.ms, curve: Curves.easeInOut),
 );
 
 // ── Math: Sequence Math ─────────────────────────────────────────────────────
