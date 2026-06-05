@@ -28,6 +28,33 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final inner = Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            (tint ?? Colors.white).withValues(alpha: 0.10),
+            (tint ?? Colors.white).withValues(alpha: 0.03),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: borderColor ?? Colors.white.withValues(alpha: 0.10),
+        ),
+      ),
+      child: child,
+    );
+    // Skip BackdropFilter when blur <= 0 — backdrop blur is the single most
+    // expensive thing on this screen, and it's not worth paying 20× when the
+    // game grid is scrolling.
+    final blurred = blur <= 0
+        ? inner
+        : BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+            child: inner,
+          );
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
@@ -44,27 +71,7 @@ class GlassCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  (tint ?? Colors.white).withValues(alpha: 0.10),
-                  (tint ?? Colors.white).withValues(alpha: 0.03),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(radius),
-              border: Border.all(
-                color: borderColor ?? Colors.white.withValues(alpha: 0.10),
-              ),
-            ),
-            child: child,
-          ),
-        ),
+        child: blurred,
       ),
     );
   }

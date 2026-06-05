@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/i18n/app_lang.dart';
 import '../../../core/theme/app_palette.dart';
+import '../../../shared/widgets/win_burst.dart';
 import 'option_quiz.dart';
 
 /// Returns the [QuizSpec] for a quiz-based game id, or null if [id] is not one.
@@ -31,95 +32,16 @@ QuizRound _assemble(String answer, List<String> distractors, {Object? data}) {
 // ── Math: Bigger Sum ────────────────────────────────────────────────────────
 const _bsDir = 'assets/games/bigger_sum';
 
-/// Tasteful "right side wins" burst: glow + ring/pop-ring ripples, a quick
-/// burst, an up-arrow rising as the focal point with a check, and corner
-/// sparkles. Higher combo adds a spark.
-Widget _biggerSumWinFx(int id, int combo, int answerIndex) {
-  final strong = combo >= 3;
-  Widget at(Alignment a, Widget w) => Align(alignment: a, child: w);
-  return Center(
-    child: SizedBox(
-      width: 280,
-      height: 280,
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          Image.asset('$_bsDir/halo.png', width: 200)
-              .animate(key: ValueKey('halo$id'))
-              .fadeIn(duration: 140.ms)
-              .scaleXY(begin: 0.6, end: 1.15, duration: 380.ms, curve: Curves.easeOut)
-              .fadeOut(delay: 300.ms, duration: 300.ms),
-          Image.asset('$_bsDir/ring.png', width: 130)
-              .animate(key: ValueKey('ring$id'))
-              .scaleXY(begin: 0.3, end: 1.7, duration: 520.ms, curve: Curves.easeOut)
-              .fadeOut(delay: 200.ms, duration: 320.ms),
-          Image.asset('$_bsDir/pop_ring.png', width: 150)
-              .animate(key: ValueKey('pop$id'))
-              .scaleXY(begin: 0.4, end: 1.9, duration: 620.ms, curve: Curves.easeOut)
-              .fadeOut(delay: 260.ms, duration: 340.ms),
-          Image.asset('$_bsDir/burst.png', width: 168)
-              .animate(key: ValueKey('burst$id'))
-              .scaleXY(begin: 0.4, end: 1.0, duration: 260.ms, curve: Curves.easeOut)
-              .fadeOut(delay: 120.ms, duration: 240.ms),
-          Image.asset('$_bsDir/confetti.png', width: 200)
-              .animate(key: ValueKey('conf$id'))
-              .scaleXY(begin: 0.4, end: 1.1, delay: 120.ms, duration: 340.ms, curve: Curves.easeOut)
-              .fadeOut(delay: 360.ms, duration: 280.ms),
-          if (strong)
-            Image.asset('$_bsDir/spark.png', width: 228)
-                .animate(key: ValueKey('spark$id'))
-                .fadeIn(duration: 120.ms)
-                .scaleXY(begin: 0.5, end: 1.15, duration: 340.ms, curve: Curves.easeOut)
-                .fadeOut(delay: 220.ms, duration: 260.ms),
-          // up-arrow rising — the bigger side wins
-          Image.asset('$_bsDir/up_arrow.png', width: 62)
-              .animate(key: ValueKey('up$id'))
-              .fadeIn(duration: 120.ms)
-              .slideY(begin: 0.9, end: -0.4, duration: 480.ms, curve: Curves.easeOut)
-              .fadeOut(delay: 320.ms, duration: 200.ms),
-          // check — focal confirmation
-          Image.asset('$_bsDir/check.png', width: 76)
-              .animate(key: ValueKey('chk$id'))
-              .scale(
-                  begin: const Offset(0.3, 0.3),
-                  end: const Offset(1, 1),
-                  delay: 80.ms,
-                  duration: 360.ms,
-                  curve: Curves.easeOutBack)
-              .then(delay: 220.ms)
-              .fadeOut(duration: 240.ms),
-          at(
-            const Alignment(-0.72, -0.55),
-            Image.asset('$_bsDir/sparkle.png', width: 46)
-                .animate(key: ValueKey('s1$id'))
-                .scale(
-                    begin: const Offset(0.2, 0.2),
-                    end: const Offset(1, 1),
-                    delay: 80.ms,
-                    duration: 260.ms,
-                    curve: Curves.easeOutBack)
-                .then(delay: 120.ms)
-                .fadeOut(duration: 200.ms),
-          ),
-          at(
-            const Alignment(0.72, -0.42),
-            Image.asset('$_bsDir/sparkle.png', width: 38)
-                .animate(key: ValueKey('s2$id'))
-                .scale(
-                    begin: const Offset(0.2, 0.2),
-                    end: const Offset(1, 1),
-                    delay: 170.ms,
-                    duration: 260.ms,
-                    curve: Curves.easeOutBack)
-                .then(delay: 80.ms)
-                .fadeOut(duration: 200.ms),
-          ),
-        ],
-      ),
-    ),
-  );
-}
+/// Clean correct-answer burst (shared [WinBurst]): soft glow + one ring + a
+/// quick burst, the up-arrow rising over a check, sparkles orbiting the outside.
+Widget _biggerSumWinFx(int id, int combo, int answerIndex, String? answerText) =>
+    WinBurst(
+      dir: _bsDir,
+      fxId: id,
+      combo: combo,
+      reveal: WinReveal(
+          check: '$_bsDir/check.png', riser: '$_bsDir/up_arrow.png', id: id),
+    );
 
 final _biggerSum = QuizSpec(
   title: 'Vế Lớn Hơn',
@@ -132,6 +54,7 @@ final _biggerSum = QuizSpec(
     cross: '$_bsDir/cross.png',
     shimmer: '$_bsDir/shimmer.png',
     optionFrame: '$_bsDir/eq_frame.png',
+    optionAspect: 4.7,
     screenShake: true,
     winBuilder: _biggerSumWinFx,
   ),
@@ -171,10 +94,31 @@ final _biggerSum = QuizSpec(
 );
 
 // ── Math: Sequence Math ─────────────────────────────────────────────────────
+const _sqDir = 'assets/games/sequence_math';
+
 final _sequenceMath = QuizSpec(
   title: 'Dãy Số',
   accent: AppPalette.math,
-  iconAsset: 'assets/kit/trophy_cyan.png',
+  iconAsset: '$_sqDir/trophy.png',
+  sparkAsset: '$_sqDir/sparkle.png',
+  fx: QuizFx(
+    header: '$_sqDir/robot_mascot.png',
+    headerHalo: '$_sqDir/halo.png',
+    cross: '$_sqDir/cross.png',
+    shimmer: '$_sqDir/shooting_star.png',
+    optionFrame: '$_sqDir/option_pad.png',
+    optionAspect: 1.72,
+    screenShake: true,
+    // Clean, focused celebration: glow + ring + burst behind the revealed
+    // answer node (matches the other number games — no streak/confetti pile-up).
+    winBuilder: (id, combo, idx, answer) => WinBurst(
+      dir: _sqDir,
+      fxId: id,
+      combo: combo,
+      alignment: const Alignment(0, -0.12),
+      reveal: _SeqRevealNode(value: answer ?? '', id: id),
+    ),
+  ),
   icon: Icons.functions_rounded,
   instruction: () => L('Số tiếp theo của dãy?', 'Next number in the sequence?'),
   generate: (solved, difficulty, rng) {
@@ -209,21 +153,166 @@ final _sequenceMath = QuizSpec(
     return _assemble('$answer', distractors.map((e) => '$e').toList(),
         data: '$shown,  ?');
   },
-  buildPrompt: (context, round) => Text(
-    round.data as String,
-    textAlign: TextAlign.center,
-    style: const TextStyle(
-        color: AppPalette.textPrimary,
-        fontSize: 30,
-        fontWeight: FontWeight.w900),
-  ),
+  // The four shown terms + "?" render as a flowing row of sprite nodes.
+  buildPrompt: (context, round) {
+    final parts = (round.data as String)
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    Widget node(int i, String part) {
+      final isQ = part == '?';
+      final Widget tile = isQ
+          ? SizedBox(
+              width: 58,
+              height: 58,
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  Image.asset('$_sqDir/halo.png', width: 80, height: 80)
+                      .animate(onPlay: (c) => c.repeat(reverse: true))
+                      .fade(begin: 0.2, end: 0.62, duration: 1100.ms),
+                  Image.asset('$_sqDir/question_node.png', width: 56, height: 56)
+                      .animate(onPlay: (c) => c.repeat(reverse: true))
+                      .scaleXY(begin: 1.0, end: 1.08, duration: 1100.ms),
+                ],
+              ),
+            )
+          : SizedBox(
+              width: 54,
+              height: 54,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.asset('$_sqDir/node.png', width: 54, height: 54),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(part,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+      // Each node pops in with a stagger.
+      return tile
+          .animate()
+          .fadeIn(delay: (i * 60).ms, duration: 200.ms)
+          .scale(
+              begin: const Offset(0.4, 0.4),
+              end: const Offset(1, 1),
+              delay: (i * 60).ms,
+              duration: 340.ms,
+              curve: Curves.easeOutBack);
+    }
+
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < parts.length; i++) ...[
+            if (i > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Opacity(
+                  opacity: 0.7,
+                  child: Image.asset('$_sqDir/connector.png', width: 18)
+                      .animate(onPlay: (c) => c.repeat())
+                      .shimmer(duration: 1500.ms, color: const Color(0xFF8FE9FF)),
+                ),
+              ),
+            node(i, parts[i]),
+          ],
+        ],
+      ),
+    );
+  },
 );
 
+class _SeqRevealNode extends StatelessWidget {
+  const _SeqRevealNode({required this.value, required this.id});
+  final String value;
+  final int id;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 66,
+      height: 66,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Image.asset('$_sqDir/node.png', width: 66, height: 66),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(value,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900)),
+            ),
+          ),
+          Positioned(
+            top: -12,
+            right: -12,
+            child: Image.asset('$_sqDir/check.png', width: 32),
+          ),
+        ],
+      ),
+    )
+        .animate(key: ValueKey('rev$id'))
+        .scale(
+            begin: const Offset(0.3, 0.3),
+            end: const Offset(1, 1),
+            duration: 380.ms,
+            curve: Curves.easeOutBack)
+        .then(delay: 220.ms)
+        .fadeOut(duration: 240.ms);
+  }
+}
+
 // ── Math: Balance Equation ──────────────────────────────────────────────────
+const _balanceDir = 'assets/games/balance_eq';
+
+/// Clean balance-achieved burst (shared [WinBurst]): glow + ring + a quick
+/// burst, a glowing equals rising over a check, sparkles orbiting the outside.
+Widget _balanceWinFx(int id, int combo, int answerIndex, String? answer) =>
+    WinBurst(
+      dir: _balanceDir,
+      fxId: id,
+      combo: combo,
+      reveal: WinReveal(
+          check: '$_balanceDir/check.png',
+          riser: '$_balanceDir/equals_glow.png',
+          id: id),
+    );
+
 final _balanceEquation = QuizSpec(
   title: 'Cân Bằng',
   accent: AppPalette.math,
-  iconAsset: 'assets/kit/trophy_cyan.png',
+  iconAsset: '$_balanceDir/trophy.png',
+  sparkAsset: '$_balanceDir/sparkle.png',
+  fx: QuizFx(
+    header: '$_balanceDir/owl_mascot.png',
+    headerHalo: '$_balanceDir/halo.png',
+    cross: '$_balanceDir/cross.png',
+    shimmer: '$_balanceDir/shimmer.png',
+    optionFrame: '$_balanceDir/eq_frame.png',
+    optionAspect: 1.05,
+    screenShake: true,
+    winBuilder: _balanceWinFx,
+  ),
   icon: Icons.calculate_rounded,
   instruction: () => L('Chọn dấu cho đúng phép tính', 'Pick the operator that fits'),
   optionsPerRow: 3,
@@ -260,7 +349,8 @@ final _balanceEquation = QuizSpec(
 );
 
 // ── Language: Synonym Match ─────────────────────────────────────────────────
-const _synonyms = {
+// Synonym banks kept parallel per language; each round reads the active one.
+const _synonymsVi = {
   'Vui': 'Hạnh phúc',
   'Buồn': 'Sầu',
   'Nhanh': 'Mau',
@@ -273,12 +363,98 @@ const _synonyms = {
   'Giàu': 'Sung túc',
   'Yên tĩnh': 'Tĩnh lặng',
   'Khó': 'Gian nan',
+  'Bắt đầu': 'Khởi đầu',
+  'Kết thúc': 'Chấm dứt',
+  'Lười': 'Biếng',
+  'Chăm chỉ': 'Siêng năng',
+  'Dũng cảm': 'Can đảm',
+  'Hiền': 'Lành',
+  'Ác': 'Dữ',
+  'Cũ': 'Xưa',
+  'Mới': 'Tân',
+  'Rộng': 'Bao la',
+  'Hẹp': 'Chật',
+  'Sạch': 'Tinh tươm',
+  'Bẩn': 'Dơ',
+  'Lạnh': 'Giá',
+  'Nóng': 'Oi bức',
+  'Tức giận': 'Phẫn nộ',
+  'Lo lắng': 'Bồn chồn',
+  'Mệt': 'Kiệt sức',
+  'Vắng': 'Hoang vắng',
+  'Đông đúc': 'Tấp nập',
 };
+
+const _synonymsEn = {
+  'Happy': 'Joyful',
+  'Sad': 'Unhappy',
+  'Fast': 'Quick',
+  'Big': 'Large',
+  'Small': 'Tiny',
+  'Beautiful': 'Pretty',
+  'Smart': 'Clever',
+  'Strong': 'Powerful',
+  'Scared': 'Afraid',
+  'Rich': 'Wealthy',
+  'Quiet': 'Silent',
+  'Hard': 'Difficult',
+  'Begin': 'Start',
+  'End': 'Finish',
+  'Angry': 'Mad',
+  'Lazy': 'Idle',
+  'Diligent': 'Hardworking',
+  'Brave': 'Courageous',
+  'Kind': 'Nice',
+  'Evil': 'Wicked',
+  'Old': 'Ancient',
+  'New': 'Fresh',
+  'Empty': 'Vacant',
+  'Crowded': 'Packed',
+  'Wide': 'Broad',
+  'Narrow': 'Tight',
+  'Clean': 'Spotless',
+  'Dirty': 'Filthy',
+  'Cold': 'Chilly',
+  'Hot': 'Boiling',
+  'Calm': 'Peaceful',
+  'Tired': 'Exhausted',
+};
+
+/// The synonym bank for the active language.
+Map<String, String> get _synonyms =>
+    appLang.value == AppLang.vi ? _synonymsVi : _synonymsEn;
+
+const _synDir = 'assets/games/synonym';
+
+/// Clean synonym-match burst (shared [WinBurst]): glow + ring + a quick burst,
+/// a glowing "two words linked" rising over a check, sparkles orbiting outside.
+Widget _synonymWinFx(int id, int combo, int answerIndex, String? answer) =>
+    WinBurst(
+      dir: _synDir,
+      fxId: id,
+      combo: combo,
+      reveal: WinReveal(
+          check: '$_synDir/check.png',
+          riser: '$_synDir/link_glow.png',
+          riserWidth: 120,
+          id: id),
+    );
 
 final _synonym = QuizSpec(
   title: 'Đồng Nghĩa',
   accent: AppPalette.language,
-  iconAsset: 'assets/kit/trophy_amber.png',
+  iconAsset: '$_synDir/trophy.png',
+  sparkAsset: '$_synDir/sparkle.png',
+  fx: QuizFx(
+    header: '$_synDir/owl_mascot.png',
+    headerHalo: '$_synDir/halo.png',
+    cross: '$_synDir/cross.png',
+    shimmer: '$_synDir/shimmer.png',
+    optionFrame: '$_synDir/word_btn.png',
+    optionAspect: 1.9,
+    screenShake: true,
+    winBuilder: _synonymWinFx,
+  ),
   icon: Icons.compare_arrows_rounded,
   instruction: () => L('Từ nào ĐỒNG NGHĨA?', 'Which word is a SYNONYM?'),
   generate: (solved, difficulty, rng) {
@@ -289,12 +465,15 @@ final _synonym = QuizSpec(
       ..shuffle(rng);
     return _assemble(answer, pool.take(3).toList(), data: key);
   },
-  buildPrompt: (context, round) => Text(
-    round.data as String,
-    style: const TextStyle(
-        color: AppPalette.textPrimary,
-        fontSize: 40,
-        fontWeight: FontWeight.w900),
+  buildPrompt: (context, round) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: Text(
+      round.data as String,
+      style: const TextStyle(
+          color: AppPalette.textPrimary,
+          fontSize: 40,
+          fontWeight: FontWeight.w900),
+    ),
   ),
 );
 
@@ -335,120 +514,19 @@ final _firstLetter = QuizSpec(
 // ── Flexibility: Arrow Flanker ──────────────────────────────────────────────
 const _flankerDir = 'assets/games/arrow_flanker';
 
-/// Bespoke flanker celebration — uses the full sprite set: a spinning redo
-/// flourish, ring + pop-ring ripples, a quick burst, a directional streak,
-/// pink/blue stars at the corners, a badge below and the check at the centre.
-Widget _flankerWinFx(int id, int combo, int answerIndex) {
-  final strong = combo >= 3;
-  final leftward = answerIndex == 0; // streak shoots toward the answer
-  Widget at(Alignment a, Widget w) => Align(alignment: a, child: w);
-
-  return Center(
-    child: SizedBox(
-      width: 280,
-      height: 280,
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          // spinning flourish behind everything
-          Image.asset('$_flankerDir/redo.png', width: 170)
-              .animate(key: ValueKey('spin$id'))
-              .fadeIn(duration: 120.ms)
-              .rotate(begin: 0, end: 0.6, duration: 560.ms, curve: Curves.easeOut)
-              .scaleXY(begin: 0.6, end: 1.25, duration: 520.ms)
-              .fadeOut(delay: 320.ms, duration: 260.ms),
-          // ring + pop-ring ripples
-          Image.asset('$_flankerDir/ring.png', width: 130)
-              .animate(key: ValueKey('ring$id'))
-              .scaleXY(begin: 0.3, end: 1.7, duration: 520.ms, curve: Curves.easeOut)
-              .fadeOut(delay: 200.ms, duration: 320.ms),
-          Image.asset('$_flankerDir/pop_ring.png', width: 150)
-              .animate(key: ValueKey('pop$id'))
-              .scaleXY(begin: 0.4, end: 1.9, duration: 620.ms, curve: Curves.easeOut)
-              .fadeOut(delay: 260.ms, duration: 340.ms),
-          // quick radial burst
-          Image.asset('$_flankerDir/burst.png', width: 168)
-              .animate(key: ValueKey('burst$id'))
-              .scaleXY(begin: 0.4, end: 1.0, duration: 260.ms, curve: Curves.easeOut)
-              .fadeOut(delay: 120.ms, duration: 240.ms),
-          if (strong)
-            Image.asset('$_flankerDir/spark.png', width: 228)
-                .animate(key: ValueKey('spark$id'))
-                .fadeIn(duration: 120.ms)
-                .scaleXY(begin: 0.5, end: 1.15, duration: 340.ms, curve: Curves.easeOut)
-                .fadeOut(delay: 220.ms, duration: 260.ms),
-          // streak shooting toward the answered side — mirror the chevron for a
-          // left answer so it points the way it travels (was pointing backwards).
-          Transform.scale(
-            scaleX: leftward ? -1.0 : 1.0,
-            child: Image.asset('$_flankerDir/streak.png', width: 150),
-          )
-              .animate(key: ValueKey('streak$id'))
-              .slideX(
-                  begin: leftward ? 1.6 : -1.6,
-                  end: leftward ? -1.6 : 1.6,
-                  duration: 460.ms,
-                  curve: Curves.easeIn)
-              .fadeIn(duration: 120.ms)
-              .fadeOut(delay: 260.ms, duration: 180.ms),
-          // corner stars
-          at(
-            const Alignment(-0.74, -0.62),
-            Image.asset('$_flankerDir/star_pink.png', width: 52)
-                .animate(key: ValueKey('s1$id'))
-                .scale(
-                    begin: const Offset(0.2, 0.2),
-                    end: const Offset(1, 1),
-                    delay: 80.ms,
-                    duration: 300.ms,
-                    curve: Curves.easeOutBack)
-                .then(delay: 120.ms)
-                .fadeOut(duration: 220.ms),
-          ),
-          at(
-            const Alignment(0.76, -0.5),
-            Image.asset('$_flankerDir/star_blue.png', width: 46)
-                .animate(key: ValueKey('s2$id'))
-                .scale(
-                    begin: const Offset(0.2, 0.2),
-                    end: const Offset(1, 1),
-                    delay: 160.ms,
-                    duration: 300.ms,
-                    curve: Curves.easeOutBack)
-                .then(delay: 80.ms)
-                .fadeOut(duration: 220.ms),
-          ),
-          // badge below
-          at(
-            const Alignment(0, 0.82),
-            Image.asset('$_flankerDir/badge.png', width: 48)
-                .animate(key: ValueKey('bdg$id'))
-                .scale(
-                    begin: const Offset(0.3, 0.3),
-                    end: const Offset(1, 1),
-                    delay: 120.ms,
-                    duration: 300.ms,
-                    curve: Curves.easeOutBack)
-                .then(delay: 120.ms)
-                .fadeOut(duration: 220.ms),
-          ),
-          // the check — focal confirmation
-          Image.asset('$_flankerDir/check.png', width: 78)
-              .animate(key: ValueKey('chk$id'))
-              .scale(
-                  begin: const Offset(0.3, 0.3),
-                  end: const Offset(1, 1),
-                  delay: 80.ms,
-                  duration: 360.ms,
-                  curve: Curves.easeOutBack)
-              .then(delay: 220.ms)
-              .fadeOut(duration: 240.ms),
-        ],
-      ),
-    ),
-  );
-}
+/// Clean flanker celebration (shared [WinBurst]): glow + ring + a quick burst,
+/// a streak rising over a check, sparkles orbiting the outside.
+Widget _flankerWinFx(int id, int combo, int answerIndex, String? answerText) =>
+    WinBurst(
+      dir: _flankerDir,
+      fxId: id,
+      combo: combo,
+      reveal: WinReveal(
+          check: '$_flankerDir/check.png',
+          riser: '$_flankerDir/streak.png',
+          riserWidth: 110,
+          id: id),
+    );
 
 final _arrowFlanker = QuizSpec(
   title: 'Mũi Tên',

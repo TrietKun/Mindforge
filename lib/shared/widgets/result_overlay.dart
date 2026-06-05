@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/challenge.dart';
@@ -58,7 +59,14 @@ class _ResultOverlayState extends State<ResultOverlay> {
     if (_reported) return;
     _reported = true;
     final gameId = GameScope.maybeOf(context);
-    if (gameId != null) ChallengeStore.report(gameId, widget.score);
+    if (gameId == null) return;
+    // ChallengeStore.report bumps a ValueNotifier the ancestor _DailyCard
+    // listens to. Notifying during the build phase trips "setState during
+    // build"; defer to the next frame so the rebuild happens cleanly.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ChallengeStore.report(gameId, widget.score);
+    });
   }
 
   @override

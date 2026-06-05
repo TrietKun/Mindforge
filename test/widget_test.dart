@@ -407,4 +407,83 @@ void main() {
       await tester.pump(const Duration(milliseconds: 820));
     }
   });
+
+  testWidgets('Number Sequence (node row + framed buttons + FX) builds & taps',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 880);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester
+        .pumpWidget(_host(OptionQuizScreen(spec: quizSpecFor('sequence_math')!)));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    // The "?" node and the node tiles render the sequence; option buttons use
+    // the option_pad sprite frame.
+    expect(
+        find.image(
+            const AssetImage('assets/games/sequence_math/question_node.png')),
+        findsOneWidget);
+    final buttons = find
+        .image(const AssetImage('assets/games/sequence_math/option_pad.png'));
+    expect(buttons, findsNWidgets(4));
+    for (var i = 0; i < 5; i++) {
+      await tester.tap(buttons.at(i % 4), warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 820));
+    }
+  });
+
+  testWidgets('Balance Equation (framed operator buttons + FX) builds & taps',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 880);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester
+        .pumpWidget(_host(OptionQuizScreen(spec: quizSpecFor('balance_eq')!)));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    // Three operator buttons render text over the eq_frame sprite.
+    final buttons =
+        find.image(const AssetImage('assets/games/balance_eq/eq_frame.png'));
+    expect(buttons, findsNWidgets(3));
+    for (var i = 0; i < 6; i++) {
+      await tester.tap(buttons.at(i % 3), warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 820));
+    }
+  });
+
+  testWidgets('Synonym Match (framed word buttons + FX) builds & taps',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 880);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester
+        .pumpWidget(_host(OptionQuizScreen(spec: quizSpecFor('synonym')!)));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    final buttons =
+        find.image(const AssetImage('assets/games/synonym/word_btn.png'));
+    expect(buttons, findsNWidgets(4));
+    for (var i = 0; i < 6; i++) {
+      await tester.tap(buttons.at(i % 4), warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 820));
+    }
+  });
 }

@@ -72,6 +72,9 @@ flutter:
     - assets/games/arrow_flanker/
     - assets/games/counting_dots/
     - assets/games/bigger_sum/
+    - assets/games/sequence_math/
+    - assets/games/balance_eq/
+    - assets/games/synonym/
     - assets/kit/
 
   # An image asset can refer to one or more resolution-specific "variants", see

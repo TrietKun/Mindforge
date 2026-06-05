@@ -54,6 +54,7 @@ class QuizFx {
     this.screenShake = false,
     this.winBuilder,
     this.optionFrame,
+    this.optionAspect,
   });
 
   final String? header;
@@ -65,10 +66,16 @@ class QuizFx {
   /// Optional sprite used as the background of text answer buttons (BoxFit.fill).
   final String? optionFrame;
 
+  /// Width/height ratio of [optionFrame], so the answer cells match the sprite
+  /// and the frame isn't stretched (which made rounded corners/borders look cut).
+  final double? optionAspect;
+
   /// When set, fully replaces the default correct-answer FX. Receives the spark
-  /// id (changes per correct answer), the current combo and the answered option
-  /// index — letting a spec render a bespoke celebration with its own assets.
-  final Widget Function(int sparkId, int combo, int answerIndex)? winBuilder;
+  /// id (changes per correct answer), the current combo, the answered option
+  /// index and its text — letting a spec render a bespoke celebration (e.g.
+  /// revealing the answered value) with its own assets.
+  final Widget Function(
+      int sparkId, int combo, int answerIndex, String? answerText)? winBuilder;
 }
 
 /// Declarative description of a timed multiple-choice game. Most MindForge
@@ -151,6 +158,7 @@ class _OptionQuizScreenState extends State<OptionQuizScreen>
   int _wrongId = 0;
   int _winCombo = 0;
   int _winAnswerIndex = 0;
+  String? _winAnswerText;
   Timer? _sparkTimer;
   Timer? _crossTimer;
 
@@ -160,9 +168,22 @@ class _OptionQuizScreenState extends State<OptionQuizScreen>
 
   @override
   void dispose() {
+    appLang.removeListener(_onLangChanged);
     _sparkTimer?.cancel();
     _crossTimer?.cancel();
     super.dispose();
+  }
+
+  // Specs whose prompt/options are language-dependent (synonym, first letter…)
+  // must reshuffle into the active language, else a mid-game toggle leaves the
+  // current round in the previous language.
+  void _onLangChanged() {
+    if (!mounted || finished) return;
+    setState(() {
+      _wrongIndex = null;
+      _round = _spec.generate(_solved, widget.difficulty, _rng);
+      _roundId++;
+    });
   }
 
   @override
@@ -175,6 +196,7 @@ class _OptionQuizScreenState extends State<OptionQuizScreen>
   void initState() {
     super.initState();
     _round = _spec.generate(_solved, widget.difficulty, _rng);
+    appLang.addListener(_onLangChanged);
     startSession();
   }
 
@@ -186,6 +208,7 @@ class _OptionQuizScreenState extends State<OptionQuizScreen>
     if (index == _round.answerIndex) {
       _solved++;
       final winAnswerIndex = _round.answerIndex;
+      final winAnswerText = _round.options[winAnswerIndex].text;
       registerCorrect(
         points: (c) => (_spec.basePoints *
                 (1 + c ~/ _spec.comboDiv) *
@@ -200,6 +223,7 @@ class _OptionQuizScreenState extends State<OptionQuizScreen>
         _sparkId++;
         _winCombo = winCombo;
         _winAnswerIndex = winAnswerIndex;
+        _winAnswerText = winAnswerText;
         _round = _spec.generate(_solved, widget.difficulty, _rng);
         _roundId++;
       });
@@ -244,7 +268,7 @@ class _OptionQuizScreenState extends State<OptionQuizScreen>
     final builder = _spec.fx?.winBuilder;
     if (builder != null) {
       return IgnorePointer(
-          child: builder(_sparkId, _winCombo, _winAnswerIndex));
+          child: builder(_sparkId, _winCombo, _winAnswerIndex, _winAnswerText));
     }
     return IgnorePointer(
       child: Center(
@@ -331,6 +355,7 @@ class _OptionQuizScreenState extends State<OptionQuizScreen>
                       perRow: _spec.optionsPerRow,
                       wrongIndex: _wrongIndex,
                       frame: _spec.fx?.optionFrame,
+                      aspect: _spec.fx?.optionAspect,
                       onTap: _answer,
                     ),
                   ],
@@ -404,6 +429,7 @@ class _Options extends StatelessWidget {
     required this.wrongIndex,
     required this.onTap,
     this.frame,
+    this.aspect,
   });
 
   final QuizRound round;
@@ -411,6 +437,7 @@ class _Options extends StatelessWidget {
   final int perRow;
   final int? wrongIndex;
   final String? frame;
+  final double? aspect;
   final void Function(int index) onTap;
 
   @override
@@ -427,6 +454,7 @@ class _Options extends StatelessWidget {
                 isWrong: wrongIndex == i,
                 fullWidth: true,
                 frame: frame,
+                aspect: aspect,
                 onTap: () => onTap(i),
               ),
             ),
@@ -439,7 +467,8 @@ class _Options extends StatelessWidget {
       crossAxisCount: perRow,
       mainAxisSpacing: Insets.md,
       crossAxisSpacing: Insets.md,
-      childAspectRatio: hasAsset ? 1.6 : (perRow == 3 ? 1.6 : 2.4),
+      childAspectRatio:
+          aspect ?? (hasAsset ? 1.6 : (perRow == 3 ? 1.6 : 2.4)),
       clipBehavior: Clip.none,
       physics: const NeverScrollableScrollPhysics(),
       children: [
@@ -450,6 +479,7 @@ class _Options extends StatelessWidget {
             isWrong: wrongIndex == i,
             fullWidth: false,
             frame: frame,
+            aspect: aspect,
             onTap: () => onTap(i),
           ),
       ],
@@ -465,12 +495,14 @@ class _OptionButton extends StatefulWidget {
     required this.fullWidth,
     required this.onTap,
     this.frame,
+    this.aspect,
   });
   final QuizOption option;
   final Color accent;
   final bool isWrong;
   final bool fullWidth;
   final String? frame;
+  final double? aspect;
   final VoidCallback onTap;
 
   @override
@@ -496,28 +528,28 @@ class _OptionButtonState extends State<_OptionButton> {
         ),
       );
     } else if (!isColor && widget.frame != null) {
-      // Text on a sprite-framed button (e.g. the eq_frame bar).
-      face = SizedBox(
-        width: widget.fullWidth ? double.infinity : null,
-        height: widget.fullWidth ? 64 : null,
-        child: Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
-          children: [
+      // Text on a sprite-framed button. The frame keeps its own aspect ratio
+      // (via [aspect]) so BoxFit.fill never stretches the rounded corners.
+      final framed = Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Image.asset(widget.frame!, fit: BoxFit.fill),
+          ),
+          if (widget.isWrong)
             Positioned.fill(
-              child: Image.asset(widget.frame!, fit: BoxFit.fill),
-            ),
-            if (widget.isWrong)
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(Radii.pill),
-                    color: AppPalette.danger.withValues(alpha: 0.24),
-                  ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                  color: AppPalette.danger.withValues(alpha: 0.24),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
               child: Text(
                 option.text ?? '',
                 textAlign: TextAlign.center,
@@ -528,9 +560,17 @@ class _OptionButtonState extends State<_OptionButton> {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       );
+      // Full-width buttons size their height from the frame's aspect; grid
+      // buttons fill the (aspect-matched) cell.
+      face = widget.fullWidth
+          ? AspectRatio(
+              aspectRatio: widget.aspect ?? 5.0,
+              child: framed,
+            )
+          : SizedBox.expand(child: framed);
     } else {
       face = Container(
         width: widget.fullWidth ? double.infinity : null,

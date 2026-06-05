@@ -210,19 +210,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final game = games[index];
-                      return _GameCard(
+                      final card = _GameCard(
                         key: ValueKey('${_filter?.name}-${game.id}'),
                         game: game,
                         onTap: () => _open(context, game),
-                      )
+                      );
+                      // Only stagger the first viewport-worth of cards so the
+                      // entrance feels lively without making off-screen cards
+                      // wait 1+ second when they scroll in.
+                      if (index >= 6) return card;
+                      return card
                           .animate()
-                          .fadeIn(delay: (index * 70).ms, duration: 380.ms)
-                          .slideY(begin: 0.2, curve: Curves.easeOutCubic)
-                          .scale(
-                              begin: const Offset(0.92, 0.92),
-                              curve: Curves.easeOutCubic);
+                          .fadeIn(delay: (index * 60).ms, duration: 320.ms)
+                          .slideY(begin: 0.2, curve: Curves.easeOutCubic);
                     },
                     childCount: games.length,
+                    addAutomaticKeepAlives: false,
+                    addRepaintBoundaries: true,
                   ),
                 ),
               ),
@@ -669,6 +673,9 @@ class _GameCardState extends State<_GameCard> {
           borderColor: game.available
               ? game.color.withValues(alpha: 0.45)
               : AppPalette.stroke,
+          // Backdrop blur on every grid tile tanks scroll FPS — solid fill is
+          // visually close enough since the aurora background is busy already.
+          blur: 0,
           padding: const EdgeInsets.all(Insets.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -718,15 +725,9 @@ class _GameCardState extends State<_GameCard> {
       ),
     );
 
-    if (!game.available) return card;
-    // Available cards get a slow shimmer sweep to invite a tap.
-    return card
-        .animate(onPlay: (c) => c.repeat())
-        .shimmer(
-          delay: 2600.ms,
-          duration: 1500.ms,
-          color: game.color.withValues(alpha: 0.18),
-        );
+    // Infinite shimmer on every available card kept the whole grid repainting
+    // forever, which was the other half of the scroll-jank problem. Drop it.
+    return card;
   }
 }
 
