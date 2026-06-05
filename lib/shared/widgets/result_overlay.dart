@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../core/challenge.dart';
 import '../../core/i18n/app_lang.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/theme/app_theme.dart';
@@ -16,8 +17,9 @@ class ResultStat {
 }
 
 /// Generic end-of-session card shared by every game, with a confetti burst,
-/// a glowing icon ring, and a counting-up score.
-class ResultOverlay extends StatelessWidget {
+/// a glowing icon ring, and a counting-up score. When shown inside a
+/// [GameScope], it reports the final score to [ChallengeStore] once.
+class ResultOverlay extends StatefulWidget {
   const ResultOverlay({
     super.key,
     required this.title,
@@ -44,7 +46,32 @@ class ResultOverlay extends StatelessWidget {
   final String? iconAsset;
 
   @override
+  State<ResultOverlay> createState() => _ResultOverlayState();
+}
+
+class _ResultOverlayState extends State<ResultOverlay> {
+  bool _reported = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_reported) return;
+    _reported = true;
+    final gameId = GameScope.maybeOf(context);
+    if (gameId != null) ChallengeStore.report(gameId, widget.score);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final title = widget.title;
+    final score = widget.score;
+    final scoreSuffix = widget.scoreSuffix;
+    final stats = widget.stats;
+    final accent = widget.accent;
+    final icon = widget.icon;
+    final iconAsset = widget.iconAsset;
+    final onRetry = widget.onRetry;
+    final onClose = widget.onClose;
     return Positioned.fill(
       child: Stack(
         children: [

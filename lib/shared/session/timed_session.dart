@@ -4,11 +4,18 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/difficulty.dart';
+
 /// Reusable timed-session logic shared by the quiz-style games (score, combo,
-/// countdown, flash feedback). Hosts implement [sessionSeconds] and call
-/// [registerCorrect] / [registerWrong] from their answer handlers.
+/// countdown, flash feedback). Hosts implement [sessionSeconds] (the game's
+/// base length) and call [registerCorrect] / [registerWrong] from their answer
+/// handlers. The player-selected [GameSettings.duration] scales the base length.
 mixin TimedSessionMixin<T extends StatefulWidget> on State<T> {
   double get sessionSeconds;
+
+  /// The base length scaled by the player's play-time choice. Resolved when a
+  /// session starts so the running countdown stays consistent.
+  double effectiveSeconds = 0;
 
   double timeLeft = 0;
   int score = 0;
@@ -21,7 +28,9 @@ mixin TimedSessionMixin<T extends StatefulWidget> on State<T> {
 
   Timer? _ticker;
 
-  double get progress => (timeLeft / sessionSeconds).clamp(0.0, 1.0);
+  double get progress => effectiveSeconds <= 0
+      ? 0
+      : (timeLeft / effectiveSeconds).clamp(0.0, 1.0);
 
   int get accuracy {
     final total = hits + misses;
@@ -32,7 +41,8 @@ mixin TimedSessionMixin<T extends StatefulWidget> on State<T> {
   void onSessionFinished() {}
 
   void startSession() {
-    timeLeft = sessionSeconds;
+    effectiveSeconds = GameSettings.duration.value.apply(sessionSeconds);
+    timeLeft = effectiveSeconds;
     score = 0;
     combo = 0;
     bestCombo = 0;

@@ -38,9 +38,52 @@ extension DifficultyX on Difficulty {
       };
 }
 
-/// App-wide selected difficulty. Simple in-memory setting shared across games.
+/// Play-time length. Scales each game's tuned base duration so the relative
+/// balance between games is preserved (a puzzle stays longer than a reflex
+/// game) while letting the player pick shorter or longer sessions.
+enum GameDuration { short, normal, long }
+
+extension GameDurationX on GameDuration {
+  String get label => switch (this) {
+        GameDuration.short => L('Ngắn', 'Short'),
+        GameDuration.normal => L('Vừa', 'Medium'),
+        GameDuration.long => L('Dài', 'Long'),
+      };
+
+  String get description => switch (this) {
+        GameDuration.short => L('Ván nhanh gọn', 'Quick rounds'),
+        GameDuration.normal => L('Độ dài tiêu chuẩn', 'Standard length'),
+        GameDuration.long => L('Chơi lâu hơn', 'Longer sessions'),
+      };
+
+  Color get color => switch (this) {
+        GameDuration.short => AppPalette.math,
+        GameDuration.normal => AppPalette.focus,
+        GameDuration.long => AppPalette.memory,
+      };
+
+  IconData get icon => switch (this) {
+        GameDuration.short => Icons.bolt_rounded,
+        GameDuration.normal => Icons.timer_rounded,
+        GameDuration.long => Icons.hourglass_bottom_rounded,
+      };
+
+  /// Multiplier applied to a game's base session length.
+  double get factor => switch (this) {
+        GameDuration.short => 0.6,
+        GameDuration.normal => 1.0,
+        GameDuration.long => 1.5,
+      };
+
+  /// Resolves a game's base seconds into the player-selected length.
+  double apply(double baseSeconds) => (baseSeconds * factor).roundToDouble();
+}
+
+/// App-wide settings shared across games (in-memory).
 class GameSettings {
   GameSettings._();
   static final ValueNotifier<Difficulty> difficulty =
       ValueNotifier(Difficulty.medium);
+  static final ValueNotifier<GameDuration> duration =
+      ValueNotifier(GameDuration.normal);
 }

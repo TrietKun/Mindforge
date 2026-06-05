@@ -40,7 +40,8 @@ class NumberFlowScreen extends StatefulWidget {
 }
 
 class _NumberFlowScreenState extends State<NumberFlowScreen> {
-  static const double _sessionSeconds = 45;
+  static const double _baseSeconds = 45;
+  double _sessionSeconds = _baseSeconds; // base scaled by the play-time setting
   static const Color _accent = AppPalette.logic;
 
   final _rng = math.Random();
@@ -61,7 +62,7 @@ class _NumberFlowScreenState extends State<NumberFlowScreen> {
         Difficulty.hard => 5,
       };
 
-  double _timeLeft = _sessionSeconds;
+  double _timeLeft = _baseSeconds;
   int _score = 0;
   int _combo = 0;
   int _bestCombo = 0;
@@ -89,6 +90,8 @@ class _NumberFlowScreenState extends State<NumberFlowScreen> {
   }
 
   void _start() {
+    _sessionSeconds = GameSettings.duration.value.apply(_baseSeconds);
+    _timeLeft = _sessionSeconds;
     _ticker = Timer.periodic(const Duration(milliseconds: 50), (_) {
       if (!mounted) return;
       setState(() {

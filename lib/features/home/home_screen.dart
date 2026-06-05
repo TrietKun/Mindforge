@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../core/challenge.dart';
 import '../../core/difficulty.dart';
 import '../../core/i18n/app_lang.dart';
 import '../../core/theme/app_palette.dart';
@@ -9,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/models/game_info.dart';
 import '../../shared/widgets/aurora_background.dart';
 import '../../shared/widgets/difficulty_selector.dart';
+import '../../shared/widgets/duration_selector.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../games/anagram/anagram_screen.dart';
 import '../games/card_match/card_match_screen.dart';
@@ -89,8 +91,10 @@ class _HomeScreenState extends State<HomeScreen> {
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 460),
         reverseTransitionDuration: const Duration(milliseconds: 340),
-        pageBuilder: (context, anim, secondaryAnim) =>
-            _screenFor(game.id, GameSettings.difficulty.value),
+        pageBuilder: (context, anim, secondaryAnim) => GameScope(
+          gameId: game.id,
+          child: _screenFor(game.id, GameSettings.difficulty.value),
+        ),
         transitionsBuilder: (context, anim, secondaryAnim, child) {
           final curved =
               CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
@@ -126,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       const _Header(),
                       const SizedBox(height: Insets.lg),
-                      const _DailyCard()
+                      _DailyCard(onOpen: (game) => _open(context, game))
                           .animate()
                           .fadeIn(delay: 200.ms)
                           .slideY(begin: 0.2, curve: Curves.easeOut),
@@ -145,6 +149,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       const DifficultySelector()
                           .animate()
                           .fadeIn(delay: 280.ms)
+                          .slideY(begin: 0.2, curve: Curves.easeOut),
+                      const SizedBox(height: Insets.md),
+                      Row(
+                        children: [
+                          const Icon(Icons.timer_rounded,
+                              color: AppPalette.textSecondary, size: 18),
+                          const SizedBox(width: 6),
+                          Text(L('Thời gian', 'Play time'),
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                  color: AppPalette.textSecondary)),
+                        ],
+                      ),
+                      const SizedBox(height: Insets.sm),
+                      const DurationSelector()
+                          .animate()
+                          .fadeIn(delay: 340.ms)
                           .slideY(begin: 0.2, curve: Curves.easeOut),
                     ],
                   ),
@@ -328,14 +348,10 @@ class _Header extends StatelessWidget {
             ],
           ),
         ),
-        const _MenuButton(),
-        const SizedBox(width: Insets.sm),
-        const _LangButton(),
-        const SizedBox(width: Insets.sm),
-        const _StreakRing(days: 3)
+        const _MenuButton()
             .animate()
             .fadeIn(delay: 120.ms)
-            .scale(begin: const Offset(0.6, 0.6), curve: Curves.easeOutBack),
+            .scale(begin: const Offset(0.7, 0.7), curve: Curves.easeOutBack),
       ],
     );
   }
@@ -492,131 +508,55 @@ class _LangChipsState extends State<_LangChips> {
   }
 }
 
-/// Pill toggle that flips the app language between Vietnamese and English.
-class _LangButton extends StatelessWidget {
-  const _LangButton();
-
-  @override
-  Widget build(BuildContext context) {
-    final isVi = appLang.value == AppLang.vi;
-    return GestureDetector(
-      onTap: toggleLang,
-      child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: AppPalette.surface.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(Radii.pill),
-          border: Border.all(color: AppPalette.stroke),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.language_rounded,
-                color: AppPalette.textSecondary, size: 16),
-            const SizedBox(width: 5),
-            Text(
-              isVi ? 'VI' : 'EN',
-              style: const TextStyle(
-                color: AppPalette.textPrimary,
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StreakRing extends StatelessWidget {
-  const _StreakRing({required this.days});
-  final int days;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const SweepGradient(
-          colors: [
-            AppPalette.reaction,
-            AppPalette.gold,
-            AppPalette.reaction,
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppPalette.reaction.withValues(alpha: 0.4),
-            blurRadius: 18,
-            spreadRadius: -4,
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(2.5),
-      child: Container(
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppPalette.background,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.local_fire_department_rounded,
-                    color: AppPalette.gold, size: 18)
-                .animate(onPlay: (c) => c.repeat(reverse: true))
-                .scaleXY(begin: 1, end: 1.15, duration: 900.ms),
-            Text('$days',
-                style: const TextStyle(
-                    color: AppPalette.textPrimary,
-                    fontSize: 13,
-                    height: 1,
-                    fontWeight: FontWeight.w800)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
+/// Live "Today's Challenge" card — picks a real game + target for the day,
+/// tracks the player's best score toward it, and opens the game when tapped.
 class _DailyCard extends StatelessWidget {
-  const _DailyCard();
+  const _DailyCard({required this.onOpen});
+
+  final void Function(GameInfo game) onOpen;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(Insets.lg),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppPalette.memory.withValues(alpha: 0.9),
-            AppPalette.focus.withValues(alpha: 0.9),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(Radii.lg),
-        boxShadow: [
-          BoxShadow(
-            color: AppPalette.focus.withValues(alpha: 0.35),
-            blurRadius: 34,
-            spreadRadius: -10,
-            offset: const Offset(0, 14),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
+    return ValueListenableBuilder<int>(
+      valueListenable: ChallengeStore.revision,
+      builder: (context, _, _) {
+        final challenge = ChallengeStore.today();
+        final game = challenge.game;
+        final done = challenge.done;
+        final card = GestureDetector(
+          onTap: () => onOpen(game),
+          child: Container(
+            padding: const EdgeInsets.all(Insets.lg),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  game.color.withValues(alpha: 0.92),
+                  AppPalette.focus.withValues(alpha: 0.88),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(Radii.lg),
+              boxShadow: [
+                BoxShadow(
+                  color: game.color.withValues(alpha: 0.35),
+                  blurRadius: 34,
+                  spreadRadius: -10,
+                  offset: const Offset(0, 14),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.auto_awesome_rounded,
-                        color: Colors.white, size: 18),
+                    Icon(
+                        done
+                            ? Icons.verified_rounded
+                            : Icons.auto_awesome_rounded,
+                        color: Colors.white,
+                        size: 18),
                     const SizedBox(width: 6),
                     Text(L('THỬ THÁCH HÔM NAY', "TODAY'S CHALLENGE"),
                         style: const TextStyle(
@@ -624,39 +564,77 @@ class _DailyCard extends StatelessWidget {
                             fontSize: 11,
                             letterSpacing: 1.2,
                             fontWeight: FontWeight.w700)),
+                    if (done) ...[
+                      const Spacer(),
+                      Text(L('HOÀN THÀNH', 'DONE'),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              letterSpacing: 1,
+                              fontWeight: FontWeight.w800)),
+                    ],
                   ],
                 ),
                 const SizedBox(height: Insets.sm),
-                Text(L('Đạt 500 điểm', 'Reach 500 points'),
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text('${L('Chạm Nhanh', 'Quick Tap')} • +50 XP',
-                    style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85))),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                              L('Đạt ${challenge.target} điểm',
+                                  'Reach ${challenge.target} points'),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 2),
+                          Text('${game.title} • ${challenge.best}/${challenge.target}',
+                              style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: Insets.md),
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                          done
+                              ? Icons.check_rounded
+                              : Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 32),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Insets.md),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                  child: LinearProgressIndicator(
+                    value: challenge.progress,
+                    minHeight: 7,
+                    backgroundColor: Colors.white.withValues(alpha: 0.22),
+                    valueColor: const AlwaysStoppedAnimation(Colors.white),
+                  ),
+                ),
               ],
             ),
           ),
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.22),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.play_arrow_rounded,
-                color: Colors.white, size: 32),
-          ),
-        ],
-      ),
-    )
-        .animate(onPlay: (c) => c.repeat())
-        .shimmer(
+        );
+        // Keep the inviting shimmer only while the goal is still open.
+        if (done) return card;
+        return card.animate(onPlay: (c) => c.repeat()).shimmer(
             delay: 1400.ms,
             duration: 1600.ms,
             color: Colors.white.withValues(alpha: 0.25));
+      },
+    );
   }
 }
 

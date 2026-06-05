@@ -44,19 +44,23 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   });
 
-  testWidgets('Language toggle switches VI <-> EN', (tester) async {
+  testWidgets('Language switches from the settings sheet', (tester) async {
     appLang.value = AppLang.vi;
     addTearDown(() => appLang.value = AppLang.vi);
     await tester.pumpWidget(const MindForgeApp());
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Chạm Nhanh'), findsWidgets);
-    await tester.tap(find.text('VI'));
-    await tester.pump(const Duration(milliseconds: 250));
+
+    // The only top-right control is the "..." menu — open it, then switch lang.
+    await tester.tap(find.image(const AssetImage('assets/kit/menu.png')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.text('EN'));
+    await tester.pump(const Duration(milliseconds: 350));
 
     expect(appLang.value, AppLang.en);
     expect(find.text('Quick Tap'), findsWidgets);
-    expect(find.text('Games'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 2));
   });
@@ -75,6 +79,32 @@ void main() {
     expect(GameSettings.difficulty.value, Difficulty.easy);
 
     GameSettings.difficulty.value = Difficulty.medium;
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('Play-time selector updates the global setting and scales seconds',
+      (tester) async {
+    GameSettings.difficulty.value = Difficulty.medium;
+    GameSettings.duration.value = GameDuration.normal;
+    addTearDown(() => GameSettings.duration.value = GameDuration.normal);
+    await tester.pumpWidget(const MindForgeApp());
+    await tester.pump(const Duration(seconds: 1));
+
+    // The Vietnamese labels for the three play-time presets.
+    await tester.tap(find.text('Dài'));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(GameSettings.duration.value, GameDuration.long);
+
+    await tester.tap(find.text('Ngắn'));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(GameSettings.duration.value, GameDuration.short);
+
+    // Scaling preserves order: short < normal < long for the same base length.
+    expect(GameDuration.short.apply(60), lessThan(GameDuration.normal.apply(60)));
+    expect(GameDuration.normal.apply(60), lessThan(GameDuration.long.apply(60)));
+    expect(GameDuration.normal.apply(60), 60);
+
+    GameSettings.duration.value = GameDuration.normal;
     await tester.pump(const Duration(seconds: 3));
   });
 

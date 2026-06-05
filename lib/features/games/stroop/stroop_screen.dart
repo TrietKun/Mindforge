@@ -39,7 +39,8 @@ class StroopScreen extends StatefulWidget {
 }
 
 class _StroopScreenState extends State<StroopScreen> {
-  static const double _sessionSeconds = 30;
+  static const double _baseSeconds = 30;
+  double _sessionSeconds = _baseSeconds; // base scaled by the play-time setting
 
   final _rng = math.Random();
   Timer? _ticker;
@@ -50,7 +51,7 @@ class _StroopScreenState extends State<StroopScreen> {
         Difficulty.hard => (trap: 0.85, penalty: 2.2),
       };
 
-  double _timeLeft = _sessionSeconds;
+  double _timeLeft = _baseSeconds;
   int _score = 0;
   int _combo = 0;
   int _bestCombo = 0;
@@ -75,6 +76,8 @@ class _StroopScreenState extends State<StroopScreen> {
   }
 
   void _start() {
+    _sessionSeconds = GameSettings.duration.value.apply(_baseSeconds);
+    _timeLeft = _sessionSeconds;
     _ticker = Timer.periodic(const Duration(milliseconds: 50), (_) {
       if (!mounted) return;
       setState(() {
