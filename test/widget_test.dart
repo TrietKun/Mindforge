@@ -486,4 +486,29 @@ void main() {
       await tester.pump(const Duration(milliseconds: 820));
     }
   });
+
+  testWidgets(
+      'First Letter (ambient prompt + framed word buttons + FX) builds & taps',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 880);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester
+        .pumpWidget(_host(OptionQuizScreen(spec: quizSpecFor('first_letter')!)));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    final buttons =
+        find.image(const AssetImage('assets/games/first_letter/word_btn.png'));
+    expect(buttons, findsNWidgets(4));
+    for (var i = 0; i < 6; i++) {
+      await tester.tap(buttons.at(i % 4), warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 820));
+    }
+  });
 }

@@ -485,10 +485,37 @@ const _wordPool = [
   'Heo', 'Kính', 'Lửa', 'Mưa', 'Nón', 'Cam', 'Ổi', 'Táo', 'Lê', 'Khế',
 ];
 
+const _flDir = 'assets/games/first_letter';
+
+/// Clean correct-answer burst (shared [WinBurst]): soft glow + one ring + a
+/// quick burst, a glowing letter rising over a check, sparkles orbiting outside.
+Widget _firstLetterWinFx(int id, int combo, int answerIndex, String? answer) =>
+    WinBurst(
+      dir: _flDir,
+      fxId: id,
+      combo: combo,
+      reveal: WinReveal(
+          check: '$_flDir/check.png',
+          riser: '$_flDir/letter_pop.png',
+          riserWidth: 88,
+          id: id),
+    );
+
 final _firstLetter = QuizSpec(
   title: 'Chữ Đầu',
   accent: AppPalette.language,
-  iconAsset: 'assets/kit/trophy_amber.png',
+  iconAsset: '$_flDir/trophy.png',
+  sparkAsset: '$_flDir/sparkle.png',
+  fx: QuizFx(
+    header: '$_flDir/owl_mascot.png',
+    headerHalo: '$_flDir/halo.png',
+    cross: '$_flDir/cross.png',
+    shimmer: '$_flDir/shimmer.png',
+    optionFrame: '$_flDir/word_btn.png',
+    optionAspect: 1.9,
+    screenShake: true,
+    winBuilder: _firstLetterWinFx,
+  ),
   icon: Icons.text_fields_rounded,
   instruction: () =>
       L('Từ nào bắt đầu bằng chữ đã cho?', 'Which word starts with the letter?'),
@@ -501,13 +528,85 @@ final _firstLetter = QuizSpec(
       ..shuffle(rng));
     return _assemble(answer, distractors.take(3).toList(), data: letter);
   },
-  buildPrompt: (context, round) => Text(
-    round.data as String,
-    style: const TextStyle(
-        color: AppPalette.language,
-        fontSize: 56,
-        fontWeight: FontWeight.w900),
-  ),
+  buildPrompt: (context, round) {
+    final letter = round.data as String;
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        // ambient: faint floating alphabet behind a slowly swirling letter halo
+        Opacity(
+          opacity: 0.12,
+          child: Image.asset('$_flDir/letters_bg.png', width: 200),
+        ),
+        Opacity(
+          opacity: 0.10,
+          child: Image.asset('$_flDir/swirl.png', width: 168)
+              .animate(onPlay: (c) => c.repeat())
+              .rotate(begin: 0, end: 1, duration: 7000.ms),
+        ),
+        Align(
+          alignment: const Alignment(-0.92, -0.78),
+          child: Opacity(
+            opacity: 0.22,
+            child: Image.asset('$_flDir/star.png', width: 22)
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .moveY(
+                    begin: -4, end: 4, duration: 2600.ms, curve: Curves.easeInOut),
+          ),
+        ),
+        Align(
+          alignment: const Alignment(0.94, 0.72),
+          child: Opacity(
+            opacity: 0.20,
+            child: Image.asset('$_flDir/star.png', width: 18)
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .moveY(
+                    begin: 5, end: -5, duration: 3000.ms, curve: Curves.easeInOut),
+          ),
+        ),
+        // the target letter on its glossy tile — pops in, then idly pulses
+        SizedBox(
+          width: 128,
+          height: 128,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.asset('$_flDir/letter_tile.png', width: 128, height: 128)
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .fade(begin: 0.9, end: 1.0, duration: 1400.ms)
+                  .scaleXY(
+                      begin: 0.99,
+                      end: 1.03,
+                      duration: 1400.ms,
+                      curve: Curves.easeInOut),
+              Padding(
+                padding: const EdgeInsets.all(30),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    letter,
+                    style: const TextStyle(
+                      color: Color(0xFF5B2C00),
+                      fontSize: 64,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        )
+            .animate(key: ValueKey('fl-$letter'))
+            .scale(
+                begin: const Offset(0.6, 0.6),
+                end: const Offset(1, 1),
+                duration: 420.ms,
+                curve: Curves.easeOutBack)
+            .fadeIn(duration: 240.ms),
+      ],
+    );
+  },
 );
 
 
