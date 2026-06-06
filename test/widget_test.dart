@@ -621,4 +621,30 @@ void main() {
       await tester.pump(const Duration(milliseconds: 220));
     }
   });
+
+  testWidgets('Number Bonds (sprite tiles + bond FX) builds & taps',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 880);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(_host(const NumberBondsScreen()));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    // Tapping tiles selects then pairs them — correct pairs reshuffle the board,
+    // wrong pairs fire cross + screen-shake, every tap rings (Listener).
+    final chips = find.descendant(
+        of: find.byType(GridView), matching: find.byType(GestureDetector));
+    for (var i = 0; i < 12; i++) {
+      final count = chips.evaluate().length;
+      if (count == 0) break;
+      await tester.tap(chips.at(i % count), warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+  });
 }

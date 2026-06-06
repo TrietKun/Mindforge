@@ -80,6 +80,7 @@ flutter:
     - assets/games/trail_maker/
     - assets/games/sliding_puzzle/
     - assets/games/rule_shift/
+    - assets/games/number_bonds/
     - assets/kit/
 
   # An image asset can refer to one or more resolution-specific "variants", see
