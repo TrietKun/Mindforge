@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// One page of a per-game tutorial.
 class TutorialStep {
@@ -17,19 +18,38 @@ class TutorialStep {
   final IconData icon;
 }
 
-/// Tracks which games the player has already seen the tutorial for. In-memory
-/// like [ChallengeStore] — resets every cold launch, so newcomers always get
-/// the walkthrough on their first run.
+/// Tracks which games the player has already seen the tutorial for. Backed by
+/// [SharedPreferences] so the walkthrough is truly first-time-only — once a
+/// player has seen it, they only get it again from the in-game replay button.
 class TutorialStore {
   TutorialStore._();
 
+  static const _prefsKey = 'tutorial.seen';
+
   static final Set<String> _seen = {};
+  static SharedPreferences? _prefs;
+
+  /// Hydrates the in-memory set from disk. Call once at app boot before
+  /// presenting the home screen so the very first tap reads the right state.
+  static Future<void> load() async {
+    _prefs = await SharedPreferences.getInstance();
+    _seen
+      ..clear()
+      ..addAll(_prefs!.getStringList(_prefsKey) ?? const []);
+  }
 
   static bool hasSeen(String gameId) => _seen.contains(gameId);
-  static void markSeen(String gameId) => _seen.add(gameId);
+
+  static void markSeen(String gameId) {
+    if (!_seen.add(gameId)) return;
+    _prefs?.setStringList(_prefsKey, _seen.toList());
+  }
 
   /// Lets the menu offer "play tutorial again" without restarting the app.
-  static void reset() => _seen.clear();
+  static void reset() {
+    _seen.clear();
+    _prefs?.remove(_prefsKey);
+  }
 }
 
 /// Returns the tutorial pages for a game, or an empty list if none is defined.

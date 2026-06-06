@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 
 import 'core/i18n/app_lang.dart';
 import 'core/theme/app_theme.dart';
+import 'core/tutorial.dart';
 import 'features/home/home_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+  await TutorialStore.load();
   runApp(const MindForgeApp());
 }
 

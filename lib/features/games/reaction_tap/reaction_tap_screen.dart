@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/animated_counter.dart';
 import '../../../shared/widgets/app_buttons.dart';
 import '../../../shared/widgets/result_overlay.dart';
+import '../../../shared/widgets/tutorial_overlay.dart';
 import 'reaction_tap_game.dart';
 
 class ReactionTapScreen extends StatefulWidget {
@@ -105,6 +106,8 @@ class _Hud extends StatelessWidget {
           Row(
             children: [
               RoundIconButton(icon: Icons.close_rounded, onTap: onClose),
+              const SizedBox(width: 8),
+              const TutorialButton(),
               const Spacer(),
               _ScorePill(score: stats.score),
               const Spacer(),

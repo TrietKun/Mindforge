@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../core/challenge.dart';
 import '../../core/i18n/app_lang.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/theme/app_theme.dart';
@@ -39,6 +40,39 @@ Future<bool> showGameTutorial(BuildContext context, GameInfo game) async {
     },
   );
   return result ?? false;
+}
+
+/// Compact "?" button used inside game HUDs to re-open the tutorial. Resolves
+/// the current game from [GameScope]; renders nothing if the scope is missing
+/// or the game has no tutorial defined.
+class TutorialButton extends StatelessWidget {
+  const TutorialButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final gameId = GameScope.maybeOf(context);
+    if (gameId == null || !hasTutorial(gameId)) return const SizedBox.shrink();
+    final game = kGames.firstWhere(
+      (g) => g.id == gameId,
+      orElse: () => kGames.first,
+    );
+    return Material(
+      color: AppPalette.surface.withValues(alpha: 0.7),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          showGameTutorial(context, game);
+        },
+        child: const Padding(
+          padding: EdgeInsets.all(10),
+          child: Icon(Icons.help_outline_rounded,
+              color: AppPalette.textSecondary, size: 22),
+        ),
+      ),
+    );
+  }
 }
 
 class _TutorialDialog extends StatefulWidget {

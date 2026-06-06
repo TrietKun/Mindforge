@@ -341,14 +341,24 @@ class _GridFindScreenState extends State<GridFindScreen>
                                   ),
                                 ),
                               ),
-                            Positioned.fill(
-                              child: IgnorePointer(
-                                child: RepaintBoundary(
-                                  child: const _ShimmerSweep(),
+                            // Symbol mode is dark, so the white shimmer sweep
+                            // reads as a tasteful gloss. On hue mode the whole
+                            // grid is bright and the wipe just looks like a
+                            // cheap mirror sliding across — skip it there.
+                            if (widget.mode == GridFindMode.symbol)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: RepaintBoundary(
+                                    child: const _ShimmerSweep(),
+                                  ),
                                 ),
                               ),
-                            ),
-                            if (_comboFxId > 0)
+                            // Same reasoning as the ambient sweep above: the
+                            // combo shimmer sprite reads like a harsh white
+                            // slash on the bright hue grid. Keep it for the
+                            // dark symbol mode only.
+                            if (_comboFxId > 0 &&
+                                widget.mode == GridFindMode.symbol)
                               Positioned.fill(
                                 child: IgnorePointer(
                                   child: RepaintBoundary(

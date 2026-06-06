@@ -89,9 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     HapticFeedback.selectionClick();
-    // First-time tutorial: shown once per game per app session. Skip jumps
-    // straight to the game; reaching the last step "Start" also flips the seen
-    // flag so coming back from the game screen does not loop the walkthrough.
+    // First-time tutorial: shown once, ever (state persisted via
+    // SharedPreferences). After that, the in-game help button is how players
+    // re-open it.
     if (!TutorialStore.hasSeen(game.id) && hasTutorial(game.id)) {
       final started = await showGameTutorial(context, game);
       TutorialStore.markSeen(game.id);

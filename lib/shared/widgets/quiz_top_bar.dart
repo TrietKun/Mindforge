@@ -5,6 +5,7 @@ import '../../core/theme/app_palette.dart';
 import '../../core/theme/app_theme.dart';
 import 'animated_counter.dart';
 import 'app_buttons.dart';
+import 'tutorial_overlay.dart';
 
 /// Close button + animated score + combo chip + countdown bar — the standard
 /// header for the timed quiz games.
@@ -31,6 +32,8 @@ class QuizTopBar extends StatelessWidget {
         Row(
           children: [
             RoundIconButton(icon: Icons.close_rounded, onTap: onClose),
+            const SizedBox(width: 8),
+            const TutorialButton(),
             const Spacer(),
             AnimatedCounter(
               value: score,
