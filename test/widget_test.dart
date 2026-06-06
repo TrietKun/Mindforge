@@ -596,4 +596,29 @@ void main() {
       }
     }
   });
+
+  testWidgets('Rule Shift (sprite stimulus + choices + FX) builds & taps',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 880);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(_host(const RuleShiftScreen()));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    final btns =
+        find.image(const AssetImage('assets/games/rule_shift/choice_btn.png'));
+    expect(btns, findsNWidgets(4));
+    // Each tap fires the pop ripple (Listener) + correct/wrong FX and may flip
+    // the rule (RULE CHANGED! banner) — no pumpAndSettle.
+    for (var i = 0; i < 12; i++) {
+      await tester.tap(btns.at(i % 4), warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 220));
+    }
+  });
 }
