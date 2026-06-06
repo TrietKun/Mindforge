@@ -7,11 +7,13 @@ import '../../core/difficulty.dart';
 import '../../core/i18n/app_lang.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/tutorial.dart';
 import '../../data/models/game_info.dart';
 import '../../shared/widgets/aurora_background.dart';
 import '../../shared/widgets/difficulty_selector.dart';
 import '../../shared/widgets/duration_selector.dart';
 import '../../shared/widgets/glass_card.dart';
+import '../../shared/widgets/tutorial_overlay.dart';
 import '../games/anagram/anagram_screen.dart';
 import '../games/card_match/card_match_screen.dart';
 import '../games/counting_dots/counting_dots_screen.dart';
@@ -71,7 +73,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   CognitiveGroup? _filter;
 
-  void _open(BuildContext context, GameInfo game) {
+  Future<void> _open(BuildContext context, GameInfo game) async {
     if (!game.available) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -87,6 +89,14 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     HapticFeedback.selectionClick();
+    // First-time tutorial: shown once per game per app session. Skip jumps
+    // straight to the game; reaching the last step "Start" also flips the seen
+    // flag so coming back from the game screen does not loop the walkthrough.
+    if (!TutorialStore.hasSeen(game.id) && hasTutorial(game.id)) {
+      final started = await showGameTutorial(context, game);
+      TutorialStore.markSeen(game.id);
+      if (!started || !context.mounted) return;
+    }
     Navigator.of(context).push(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 460),
