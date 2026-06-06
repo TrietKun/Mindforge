@@ -11,9 +11,24 @@ import '../../../shared/widgets/aurora_background.dart';
 import '../../../shared/widgets/quiz_top_bar.dart';
 import '../../../shared/widgets/result_overlay.dart';
 
-const _words3 = ['MEO', 'GA', 'HOA', 'MAY', 'NUI', 'CAY', 'NHA', 'CAM', 'VOI'];
-const _words4 = ['SONG', 'BIEN', 'HOC', 'DAO', 'XANH', 'BAN', 'SACH', 'LUA'];
-const _words5 = ['SACH', 'XANH', 'BIEN', 'SONG', 'TRANG', 'NGUA', 'CHUOT'];
+const _words3 = [
+  'SUS', 'CAP', 'MID', 'XAO', 'XIN', 'PHE', 'GHE', 'XUI', 'MET', 'HEN',
+  'HET', 'QUO', 'TRA', 'BOC', 'QUA', 'NEM', 'DZO', 'LOL', 'OMG', 'NAH',
+  'YAS', 'BET', 'YUP', 'ICK', 'BRO', 'SIS', 'FAM', 'UWU', 'OOF', 'RIP',
+];
+
+const _words4 = [
+  'GATO', 'SIMP', 'FLEX', 'NOOB', 'COPE', 'RAGE', 'MEME', 'LMAO', 'BRUH', 'YOLO',
+  'SWAG', 'DRIP', 'GOAT', 'VIBE', 'RIZZ', 'GYAT', 'OHIO', 'SALT', 'CRAP', 'DERP',
+  'PHET', 'DINH', 'GHET', 'BANH', 'CUOI', 'KHOC', 'QUAO', 'PHOT', 'HONG', 'CHAN',
+  'DZUI', 'QUAU', 'CHAO', 'NHAU', 'RUOU', 'KEKW', 'POGG', 'COOL', 'DANK', 'STAN',
+];
+
+const _words5 = [
+  'TOXIC', 'DRAMA', 'TOANG', 'SALTY', 'CHILL', 'CRUSH', 'GHIEN', 'SIMPS', 'NOOBS', 'VIBES',
+  'GOATS', 'SUSSY', 'BASED', 'SLAYS', 'YIKES', 'SHOOK', 'DRIPS', 'POGGS', 'COPES', 'RAGES',
+  'MEMES', 'NGHEO', 'KHOAI', 'THICH', 'SADGE', 'SWAGG', 'BRUHH', 'RIZZZ', 'STANS', 'DANKS',
+];
 
 class _Letter {
   _Letter(this.char);
