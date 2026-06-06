@@ -233,9 +233,17 @@ class _NumberBondsScreenState extends State<NumberBondsScreen>
   Widget _board() {
     return Stack(
       children: [
-        Positioned.fill(child: Image.asset(_Nb.boardFrame, fit: BoxFit.fill)),
+        // 9-patch so the neon border keeps its thickness instead of stretching
+        // (the board area is squarer than the frame's 1.79 aspect).
+        Positioned.fill(
+          child: Image.asset(
+            _Nb.boardFrame,
+            fit: BoxFit.fill,
+            centerSlice: const Rect.fromLTRB(70, 60, 314, 154),
+          ),
+        ),
         Padding(
-          padding: const EdgeInsets.all(Insets.md),
+          padding: const EdgeInsets.all(Insets.lg),
           child: GridView.builder(
             key: ValueKey('g$_boardId'),
             shrinkWrap: true,
@@ -410,7 +418,7 @@ class _Target extends StatelessWidget {
               .animate(onPlay: (c) => c.repeat(reverse: true))
               .fade(begin: 0.4, end: 0.75, duration: 1300.ms)
               .scaleXY(begin: 0.92, end: 1.1, duration: 1300.ms),
-          Image.asset(_Nb.targetBadge, width: 128, height: 128),
+          Image.asset(_Nb.targetBadge, width: 128),
           Text(
             '$target',
             style: const TextStyle(
