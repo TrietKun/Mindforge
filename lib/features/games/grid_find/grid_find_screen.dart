@@ -37,7 +37,57 @@ class _Gf {
   static const owl = '$dir/owl_mascot.png';
   static const eye = '$dir/eye.png';
   static const target = '$dir/target.png';
+  // hue-mode (rainbow) skin
+  static const cellTile = '$dir/cell_tile.png';
+  static const colorWheel = '$dir/color_wheel.png';
+  static const owlHue = '$dir/owl_hue.png';
+  static const revealHue = '$dir/reveal_hue.png';
+  static const rainbowBurst = '$dir/rainbow_burst.png';
+  static const colorConfetti = '$dir/color_confetti.png';
+  static const colorRipple = '$dir/color_ripple.png';
+  static const trophyHue = '$dir/trophy_hue.png';
 }
+
+/// Per-mode visual skin. Symbol mode is blue; hue mode is rainbow so the
+/// celebration never reads as a single colour (which could bias a colour game).
+class _Skin {
+  const _Skin({
+    required this.owl,
+    required this.behind,
+    required this.reveal,
+    required this.burst,
+    required this.confetti,
+    required this.ripple,
+    required this.trophy,
+  });
+  final String owl; // header mascot
+  final String behind; // slowly-spinning accent behind the owl
+  final String reveal; // lock ring on correct
+  final String burst;
+  final String confetti;
+  final String ripple; // shockwave
+  final String trophy; // result icon
+}
+
+const _symbolSkin = _Skin(
+  owl: _Gf.owl,
+  behind: _Gf.target,
+  reveal: _Gf.reveal,
+  burst: _Gf.burst,
+  confetti: _Gf.confetti,
+  ripple: _Gf.shockwave,
+  trophy: _Gf.trophy,
+);
+
+const _hueSkin = _Skin(
+  owl: _Gf.owlHue,
+  behind: _Gf.colorWheel,
+  reveal: _Gf.revealHue,
+  burst: _Gf.rainbowBurst,
+  confetti: _Gf.colorConfetti,
+  ripple: _Gf.colorRipple,
+  trophy: _Gf.trophyHue,
+);
 
 /// Maps each logical glyph to its glossy sprite (symbol mode).
 const _glyphSprite = <String, String>{
@@ -109,6 +159,9 @@ class _GridFindScreenState extends State<GridFindScreen>
         Difficulty.medium => 1.5,
         Difficulty.hard => 2.0,
       };
+
+  _Skin get _skin =>
+      widget.mode == GridFindMode.hue ? _hueSkin : _symbolSkin;
 
   @override
   void initState() {
@@ -258,7 +311,12 @@ class _GridFindScreenState extends State<GridFindScreen>
                         onClose: () => Navigator.of(context).maybePop(),
                       ),
                       const Spacer(),
-                      _Header(instruction: _instruction, hint: _hintCtrl),
+                      _Header(
+                        instruction: _instruction,
+                        hint: _hintCtrl,
+                        owl: _skin.owl,
+                        behind: _skin.behind,
+                      ),
                       const SizedBox(height: Insets.lg),
                       AspectRatio(
                         aspectRatio: 1,
@@ -275,6 +333,10 @@ class _GridFindScreenState extends State<GridFindScreen>
                                       align: _burstAlign,
                                       grid: _burstGrid,
                                       combo: combo,
+                                      reveal: _skin.reveal,
+                                      burst: _skin.burst,
+                                      confetti: _skin.confetti,
+                                      ripple: _skin.ripple,
                                     ),
                                   ),
                                 ),
@@ -325,7 +387,7 @@ class _GridFindScreenState extends State<GridFindScreen>
                 score: score,
                 scoreSuffix: L('điểm', 'pts'),
                 accent: _accent,
-                iconAsset: _Gf.trophy,
+                iconAsset: _skin.trophy,
                 icon: Icons.center_focus_strong_rounded,
                 stats: [
                   ResultStat(L('Đúng', 'Correct'), '$hits'),
@@ -380,9 +442,16 @@ class _GridFindScreenState extends State<GridFindScreen>
 /// Detective-owl mascot framed by a slow focus reticle, above the instruction.
 /// A "look closely" eye pulses in only while the idle [hint] runs.
 class _Header extends StatelessWidget {
-  const _Header({required this.instruction, required this.hint});
+  const _Header({
+    required this.instruction,
+    required this.hint,
+    required this.owl,
+    required this.behind,
+  });
   final String instruction;
   final AnimationController hint;
+  final String owl;
+  final String behind;
 
   @override
   Widget build(BuildContext context) {
@@ -398,11 +467,11 @@ class _Header extends StatelessWidget {
             children: [
               Opacity(
                 opacity: 0.55,
-                child: Image.asset(_Gf.target, width: 82)
+                child: Image.asset(behind, width: 82)
                     .animate(onPlay: (c) => c.repeat())
                     .rotate(begin: 0, end: 1, duration: 12000.ms),
               ),
-              Image.asset(_Gf.owl, width: 56, height: 56, fit: BoxFit.contain)
+              Image.asset(owl, width: 56, height: 56, fit: BoxFit.contain)
                   .animate(onPlay: (c) => c.repeat(reverse: true))
                   .moveY(
                       begin: -3,
@@ -492,25 +561,21 @@ class _CellState extends State<_Cell> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final base = widget.mode == GridFindMode.hue
-        ? widget.color
-        : const Color(0xFF18233B);
-
     final isHue = widget.mode == GridFindMode.hue;
-    Widget face = _GlossyCell(
-      base: base,
-      wrong: widget.isWrong,
-      // Hue mode: keep the gloss subtle so the tile colour stays saturated and
-      // the "odd colour" signal isn't washed toward white.
-      vivid: isHue,
-      child: isHue
-          ? null
-          : Padding(
+    // Hue mode: a white glossy sprite tinted by the tile colour (modulate keeps
+    // the hue saturated, unlike an additive white sheen). Symbol mode: a dark
+    // glossy cell carrying the glyph sprite.
+    Widget face = isHue
+        ? _HueTile(color: widget.color, wrong: widget.isWrong)
+        : _GlossyCell(
+            base: const Color(0xFF18233B),
+            wrong: widget.isWrong,
+            child: Padding(
               padding: const EdgeInsets.all(9),
               child: Image.asset(_glyphSprite[widget.glyph]!,
                   fit: BoxFit.contain),
             ),
-    );
+          );
 
     if (widget.isWrong) {
       face = Stack(
@@ -563,30 +628,26 @@ class _CellState extends State<_Cell> with TickerProviderStateMixin {
   }
 }
 
-/// A glossy rounded cell: vertical gradient on [base], a top sheen, a soft glow
-/// and a thin rim (red when [wrong]). Tints perfectly for hue mode.
+/// A glossy dark cell carrying a glyph (symbol mode): vertical gradient on
+/// [base], a top sheen, a soft glow and a thin rim (red when [wrong]).
 class _GlossyCell extends StatelessWidget {
   const _GlossyCell({
     required this.base,
     required this.wrong,
-    this.vivid = false,
     this.child,
   });
   final Color base;
   final bool wrong;
-
-  /// When true the gloss is kept light so [base]'s hue reads true (hue mode).
-  final bool vivid;
   final Widget? child;
 
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(Radii.md);
     final glow = wrong ? AppPalette.danger : base;
-    final lightenTop = vivid ? 0.05 : 0.16;
-    final darkenBottom = vivid ? 0.1 : 0.24;
-    final sheenTop = vivid ? 0.14 : 0.32;
-    final sheenHeight = vivid ? 0.4 : 0.46;
+    const lightenTop = 0.16;
+    const darkenBottom = 0.24;
+    const sheenTop = 0.32;
+    const sheenHeight = 0.46;
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,
@@ -648,6 +709,50 @@ class _GlossyCell extends StatelessWidget {
   }
 }
 
+/// A hue-mode tile: the white [_Gf.cellTile] sprite tinted by [color] via
+/// modulate — keeps the hue fully saturated (an additive white sheen would wash
+/// it out and weaken the "odd colour" signal). Red wash + rim + glow when [wrong].
+class _HueTile extends StatelessWidget {
+  const _HueTile({required this.color, required this.wrong});
+  final Color color;
+  final bool wrong;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(Radii.md);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: (wrong ? AppPalette.danger : color)
+                .withValues(alpha: wrong ? 0.5 : 0.32),
+            blurRadius: 12,
+            spreadRadius: -3,
+          ),
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ColorFiltered(
+            colorFilter: ColorFilter.mode(color, BlendMode.modulate),
+            child: Image.asset(_Gf.cellTile, fit: BoxFit.fill),
+          ),
+          if (wrong)
+            DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                color: AppPalette.danger.withValues(alpha: 0.22),
+                border: Border.all(color: AppPalette.danger, width: 1.6),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Correct-answer celebration locked onto the tapped cell: a reveal ring snaps
 /// in, a burst + confetti fire and a sparkle pops, with a stronger spark at
 /// higher combos.
@@ -657,12 +762,20 @@ class _CorrectFx extends StatelessWidget {
     required this.align,
     required this.grid,
     required this.combo,
+    required this.reveal,
+    required this.burst,
+    required this.confetti,
+    required this.ripple,
   });
 
   final int id;
   final Alignment align;
   final int grid;
   final int combo;
+  final String reveal;
+  final String burst;
+  final String confetti;
+  final String ripple;
 
   @override
   Widget build(BuildContext context) {
@@ -679,7 +792,7 @@ class _CorrectFx extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 // shockwave rippling outward from the solved cell
-                Image.asset(_Gf.shockwave, width: cell * 2.2)
+                Image.asset(ripple, width: cell * 2.2)
                     .animate(key: ValueKey('sw$id'))
                     .scaleXY(
                         begin: 0.4,
@@ -687,7 +800,7 @@ class _CorrectFx extends StatelessWidget {
                         duration: 520.ms,
                         curve: Curves.easeOut)
                     .fadeOut(delay: 200.ms, duration: 320.ms),
-                Image.asset(_Gf.confetti, width: cell * 2.6)
+                Image.asset(confetti, width: cell * 2.6)
                     .animate(key: ValueKey('cf$id'))
                     .scaleXY(
                         begin: 0.5,
@@ -695,7 +808,7 @@ class _CorrectFx extends StatelessWidget {
                         duration: 440.ms,
                         curve: Curves.easeOut)
                     .fadeOut(delay: 280.ms, duration: 360.ms),
-                Image.asset(_Gf.burst, width: cell * 2.0)
+                Image.asset(burst, width: cell * 2.0)
                     .animate(key: ValueKey('bu$id'))
                     .scaleXY(
                         begin: 0.4,
@@ -713,7 +826,7 @@ class _CorrectFx extends StatelessWidget {
                           duration: 320.ms,
                           curve: Curves.easeOut)
                       .fadeOut(delay: 200.ms, duration: 260.ms),
-                Image.asset(_Gf.reveal, width: cell * 1.12)
+                Image.asset(reveal, width: cell * 1.12)
                     .animate(key: ValueKey('rv$id'))
                     .scaleXY(
                         begin: 1.6,
