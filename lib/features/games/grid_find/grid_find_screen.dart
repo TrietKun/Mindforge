@@ -35,6 +35,8 @@ class _Gf {
   static const stars = '$dir/stars.png';
   static const rays = '$dir/light_rays.png';
   static const owl = '$dir/owl_mascot.png';
+  static const eye = '$dir/eye.png';
+  static const target = '$dir/target.png';
 }
 
 /// Maps each logical glyph to its glossy sprite (symbol mode).
@@ -256,7 +258,7 @@ class _GridFindScreenState extends State<GridFindScreen>
                         onClose: () => Navigator.of(context).maybePop(),
                       ),
                       const Spacer(),
-                      _Header(instruction: _instruction),
+                      _Header(instruction: _instruction, hint: _hintCtrl),
                       const SizedBox(height: Insets.lg),
                       AspectRatio(
                         aspectRatio: 1,
@@ -375,20 +377,51 @@ class _GridFindScreenState extends State<GridFindScreen>
   }
 }
 
-/// Detective-owl mascot above the instruction line.
+/// Detective-owl mascot framed by a slow focus reticle, above the instruction.
+/// A "look closely" eye pulses in only while the idle [hint] runs.
 class _Header extends StatelessWidget {
-  const _Header({required this.instruction});
+  const _Header({required this.instruction, required this.hint});
   final String instruction;
+  final AnimationController hint;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Image.asset(_Gf.owl, width: 60, height: 60, fit: BoxFit.contain)
-            .animate(onPlay: (c) => c.repeat(reverse: true))
-            .moveY(
-                begin: -3, end: 3, duration: 2200.ms, curve: Curves.easeInOut),
+        SizedBox(
+          width: 86,
+          height: 76,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Opacity(
+                opacity: 0.55,
+                child: Image.asset(_Gf.target, width: 82)
+                    .animate(onPlay: (c) => c.repeat())
+                    .rotate(begin: 0, end: 1, duration: 12000.ms),
+              ),
+              Image.asset(_Gf.owl, width: 56, height: 56, fit: BoxFit.contain)
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .moveY(
+                      begin: -3,
+                      end: 3,
+                      duration: 2200.ms,
+                      curve: Curves.easeInOut),
+              Positioned(
+                right: 0,
+                top: -2,
+                child: AnimatedBuilder(
+                  animation: hint,
+                  builder: (context, child) =>
+                      Opacity(opacity: hint.value * 0.9, child: child),
+                  child: Image.asset(_Gf.eye, width: 30),
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           instruction,
