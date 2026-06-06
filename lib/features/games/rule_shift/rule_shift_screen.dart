@@ -190,6 +190,7 @@ class _RuleShiftScreenState extends State<RuleShiftScreen>
                         mainAxisSpacing: Insets.sm,
                         crossAxisSpacing: Insets.sm,
                         childAspectRatio: 1.2, // match choice_btn so it isn't squished
+                        clipBehavior: Clip.none, // don't clip the buttons' neon glow
                         physics: const NeverScrollableScrollPhysics(),
                         children: [
                           for (var i = 0; i < 4; i++)
