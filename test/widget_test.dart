@@ -570,4 +570,30 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
     }
   });
+
+  testWidgets('Sliding Puzzle (sprite tiles + slide FX) builds & taps',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 880);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(_host(const SlidingPuzzleScreen()));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    // Tapping number tiles slides the movable ones (AnimatedPositioned) and
+    // fires the slide/snap FX — movable taps mutate the board, no pumpAndSettle.
+    for (var pass = 0; pass < 2; pass++) {
+      for (var n = 1; n <= 8; n++) {
+        final tile = find.text('$n');
+        if (tile.evaluate().isNotEmpty) {
+          await tester.tap(tile.first, warnIfMissed: false);
+        }
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 170));
+        expect(tester.takeException(), isNull);
+      }
+    }
+  });
 }
