@@ -29,13 +29,13 @@ Future<bool> showGameTutorial(BuildContext context, GameInfo game) async {
       accent: accent,
     ),
     transitionBuilder: (context, anim, _, child) {
+      // Pure ScaleTransition (no FadeTransition). Wrapping the panel in
+      // Opacity tripped Impeller's validation because the dialog's BoxShadow
+      // can't accept inherited opacity. The barrier already fades in.
       final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
-      return FadeTransition(
-        opacity: curved,
-        child: ScaleTransition(
-          scale: Tween(begin: 0.9, end: 1.0).animate(curved),
-          child: child,
-        ),
+      return ScaleTransition(
+        scale: Tween(begin: 0.9, end: 1.0).animate(curved),
+        child: child,
       );
     },
   );
