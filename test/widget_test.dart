@@ -539,4 +539,35 @@ void main() {
       await tester.pump(const Duration(milliseconds: 220));
     }
   });
+
+  testWidgets('Trail Maker (glowing trail + node FX) builds & taps',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 880);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(_host(const TrailMakerScreen()));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    // A wrong tap (node 4 while next is 1) fires the cross + screen-shake.
+    await tester.tap(find.text('4').first, warnIfMissed: false);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
+    expect(tester.takeException(), isNull);
+
+    // Tapping 1..10 in order draws the trail segment-by-segment and eventually
+    // completes the board (burst/confetti/level-up + grow) — no pumpAndSettle.
+    for (var n = 1; n <= 10; n++) {
+      final node = find.text('$n');
+      if (node.evaluate().isNotEmpty) {
+        await tester.tap(node.first, warnIfMissed: false);
+      }
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+  });
 }
