@@ -29,7 +29,6 @@ class _Nb {
   static const popRing = '$dir/pop_ring.png';
   static const shimmer = '$dir/shimmer.png';
   static const sparkle = '$dir/sparkle.png';
-  static const pairBeam = '$dir/pair_beam.png';
   static const check = '$dir/check.png';
   static const cross = '$dir/cross.png';
   static const trophy = '$dir/trophy.png';
@@ -287,11 +286,6 @@ class _NumberBondsScreenState extends State<NumberBondsScreen>
               alignment: Alignment.center,
               clipBehavior: Clip.none,
               children: [
-                Image.asset(_Nb.pairBeam, width: 320)
-                    .animate(key: ValueKey('pb$_correctFxId'))
-                    .fadeIn(duration: 120.ms)
-                    .scaleX(begin: 0.4, end: 1.0, duration: 320.ms, curve: Curves.easeOut)
-                    .fadeOut(delay: 220.ms, duration: 300.ms),
                 Image.asset(_Nb.confetti, width: 280)
                     .animate(key: ValueKey('cf$_correctFxId'))
                     .scaleXY(begin: 0.5, end: 1.1, duration: 520.ms, curve: Curves.easeOut)
