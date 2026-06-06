@@ -458,26 +458,12 @@ class _Target extends StatelessWidget {
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          // circular glow that matches the round ring (a wide-ellipse halo
-          // sprite stuck out past the sides and read as misaligned)
-          Container(
-            width: 116,
-            height: 116,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppPalette.math.withValues(alpha: 0.5),
-                  blurRadius: 26,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-          )
+          // the ring sprite carries its own neon glow, so it just breathes
+          // gently — no separate glow disc (the old one sat past the ring and
+          // its flat top read as the ring being "chipped")
+          Image.asset(_Nb.targetBadge, width: 132)
               .animate(onPlay: (c) => c.repeat(reverse: true))
-              .scaleXY(begin: 0.94, end: 1.12, duration: 1300.ms)
-              .fade(begin: 0.5, end: 0.85, duration: 1300.ms),
-          Image.asset(_Nb.targetBadge, width: 128),
+              .scaleXY(begin: 0.97, end: 1.04, duration: 1500.ms, curve: Curves.easeInOut),
           Text(
             '$target',
             style: const TextStyle(
