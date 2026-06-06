@@ -496,16 +496,20 @@ class _CellState extends State<_Cell> with TickerProviderStateMixin {
         ? widget.color
         : const Color(0xFF18233B);
 
+    final isHue = widget.mode == GridFindMode.hue;
     Widget face = _GlossyCell(
       base: base,
       wrong: widget.isWrong,
-      child: widget.mode == GridFindMode.symbol
-          ? Padding(
+      // Hue mode: keep the gloss subtle so the tile colour stays saturated and
+      // the "odd colour" signal isn't washed toward white.
+      vivid: isHue,
+      child: isHue
+          ? null
+          : Padding(
               padding: const EdgeInsets.all(9),
               child: Image.asset(_glyphSprite[widget.glyph]!,
                   fit: BoxFit.contain),
-            )
-          : null,
+            ),
     );
 
     if (widget.isWrong) {
@@ -562,15 +566,27 @@ class _CellState extends State<_Cell> with TickerProviderStateMixin {
 /// A glossy rounded cell: vertical gradient on [base], a top sheen, a soft glow
 /// and a thin rim (red when [wrong]). Tints perfectly for hue mode.
 class _GlossyCell extends StatelessWidget {
-  const _GlossyCell({required this.base, required this.wrong, this.child});
+  const _GlossyCell({
+    required this.base,
+    required this.wrong,
+    this.vivid = false,
+    this.child,
+  });
   final Color base;
   final bool wrong;
+
+  /// When true the gloss is kept light so [base]'s hue reads true (hue mode).
+  final bool vivid;
   final Widget? child;
 
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(Radii.md);
     final glow = wrong ? AppPalette.danger : base;
+    final lightenTop = vivid ? 0.05 : 0.16;
+    final darkenBottom = vivid ? 0.1 : 0.24;
+    final sheenTop = vivid ? 0.14 : 0.32;
+    final sheenHeight = vivid ? 0.4 : 0.46;
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,
@@ -578,9 +594,9 @@ class _GlossyCell extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color.lerp(base, Colors.white, 0.16)!,
+            Color.lerp(base, Colors.white, lightenTop)!,
             base,
-            Color.lerp(base, Colors.black, 0.24)!,
+            Color.lerp(base, Colors.black, darkenBottom)!,
           ],
           stops: const [0, 0.5, 1],
         ),
@@ -607,7 +623,7 @@ class _GlossyCell extends StatelessWidget {
               alignment: Alignment.topCenter,
               child: FractionallySizedBox(
                 widthFactor: 0.9,
-                heightFactor: 0.46,
+                heightFactor: sheenHeight,
                 child: Container(
                   margin: const EdgeInsets.only(top: 3),
                   decoration: BoxDecoration(
@@ -616,7 +632,7 @@ class _GlossyCell extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.white.withValues(alpha: 0.32),
+                        Colors.white.withValues(alpha: sheenTop),
                         Colors.white.withValues(alpha: 0.0),
                       ],
                     ),
