@@ -21,7 +21,6 @@ class _Nb {
   static const boardFrame = '$dir/board_frame.png';
   static const plusLink = '$dir/plus_link.png';
   static const owl = '$dir/owl_mascot.png';
-  static const halo = '$dir/halo.png';
   static const burst = '$dir/burst.png';
   static const confetti = '$dir/confetti.png';
   static const spark = '$dir/spark.png';
@@ -59,9 +58,22 @@ class _NumberBondsScreenState extends State<NumberBondsScreen>
   int _tapFxId = 0;
   int _comboFxId = 0;
   Offset _tapPos = Offset.zero;
+  final GlobalKey _targetKey = GlobalKey();
 
   late final AnimationController _shakeCtrl = AnimationController(
       vsync: this, duration: const Duration(milliseconds: 340));
+
+  /// Centre of the target badge in the FX layer's coordinate space, so the
+  /// celebration fires on the "đề" instead of floating in the empty gap.
+  Offset _targetCenter() {
+    final ctx = _targetKey.currentContext;
+    final box = ctx?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      final s = MediaQuery.of(context).size;
+      return Offset(s.width / 2, s.height * 0.4);
+    }
+    return box.localToGlobal(box.size.center(Offset.zero));
+  }
 
   @override
   double get sessionSeconds => 50;
@@ -180,7 +192,10 @@ class _NumberBondsScreenState extends State<NumberBondsScreen>
                         const Spacer(),
                         _Header(),
                         const SizedBox(height: Insets.sm),
-                        _Target(boardId: _boardId, target: _target),
+                        _Target(
+                            key: _targetKey,
+                            boardId: _boardId,
+                            target: _target),
                         const SizedBox(height: Insets.xs),
                         Image.asset(_Nb.plusLink, width: 92)
                             .animate(onPlay: (c) => c.repeat(reverse: true))
@@ -280,27 +295,28 @@ class _NumberBondsScreenState extends State<NumberBondsScreen>
                 .fadeOut(delay: 140.ms, duration: 280.ms),
           ),
         if (_correctFxId > 0) ...[
-          Align(
-            alignment: const Alignment(0, -0.05),
+          // celebration fires on the target badge (the "đề"), not the empty gap
+          _Spot(
+            center: _targetCenter(),
             child: Stack(
               alignment: Alignment.center,
               clipBehavior: Clip.none,
               children: [
-                Image.asset(_Nb.confetti, width: 280)
+                Image.asset(_Nb.confetti, width: 240)
                     .animate(key: ValueKey('cf$_correctFxId'))
                     .scaleXY(begin: 0.5, end: 1.1, duration: 520.ms, curve: Curves.easeOut)
                     .fadeOut(delay: 320.ms, duration: 420.ms),
-                Image.asset(_Nb.burst, width: 200)
+                Image.asset(_Nb.burst, width: 190)
                     .animate(key: ValueKey('bu$_correctFxId'))
                     .scaleXY(begin: 0.4, end: 1.1, duration: 340.ms, curve: Curves.easeOut)
                     .fadeOut(delay: 200.ms, duration: 300.ms),
                 if (combo >= 3)
-                  Image.asset(_Nb.spark, width: 230)
+                  Image.asset(_Nb.spark, width: 220)
                       .animate(key: ValueKey('sk$_correctFxId'))
                       .fadeIn(duration: 110.ms)
                       .scaleXY(begin: 0.6, end: 1.1, duration: 320.ms)
                       .fadeOut(delay: 200.ms, duration: 260.ms),
-                Image.asset(_Nb.sparkle, width: 70)
+                Image.asset(_Nb.sparkle, width: 66)
                     .animate(key: ValueKey('sp$_correctFxId'))
                     .scaleXY(begin: 0.2, end: 1, duration: 320.ms, curve: Curves.easeOutBack)
                     .then(delay: 120.ms)
@@ -395,7 +411,7 @@ class _Header extends StatelessWidget {
 
 /// The target sum shown inside the glowing badge ring over a pulsing halo.
 class _Target extends StatelessWidget {
-  const _Target({required this.boardId, required this.target});
+  const _Target({super.key, required this.boardId, required this.target});
   final int boardId;
   final int target;
 
@@ -408,10 +424,25 @@ class _Target extends StatelessWidget {
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          Image.asset(_Nb.halo, width: 168)
+          // circular glow that matches the round ring (a wide-ellipse halo
+          // sprite stuck out past the sides and read as misaligned)
+          Container(
+            width: 116,
+            height: 116,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppPalette.math.withValues(alpha: 0.5),
+                  blurRadius: 26,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          )
               .animate(onPlay: (c) => c.repeat(reverse: true))
-              .fade(begin: 0.4, end: 0.75, duration: 1300.ms)
-              .scaleXY(begin: 0.92, end: 1.1, duration: 1300.ms),
+              .scaleXY(begin: 0.94, end: 1.12, duration: 1300.ms)
+              .fade(begin: 0.5, end: 0.85, duration: 1300.ms),
           Image.asset(_Nb.targetBadge, width: 128),
           Text(
             '$target',
