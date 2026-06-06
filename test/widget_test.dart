@@ -511,4 +511,32 @@ void main() {
       await tester.pump(const Duration(milliseconds: 820));
     }
   });
+
+  testWidgets('Grid Find FX (correct burst / wrong shake / level-up) fire',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 880);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester
+        .pumpWidget(_host(const GridFindScreen(mode: GridFindMode.symbol)));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    // Cycle through cells: every round at least one tap hits the odd cell, so
+    // corrects accumulate, the board grows (level-up FX) and wrong taps fire
+    // the shake/cross — all without pumpAndSettle.
+    final cells = find.descendant(
+        of: find.byType(GridView), matching: find.byType(GestureDetector));
+    for (var t = 0; t < 30; t++) {
+      final count = cells.evaluate().length;
+      if (count == 0) break;
+      await tester.tap(cells.at(t % count), warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 70));
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 220));
+    }
+  });
 }
