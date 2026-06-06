@@ -189,6 +189,7 @@ class _RuleShiftScreenState extends State<RuleShiftScreen>
                         crossAxisCount: 4,
                         mainAxisSpacing: Insets.sm,
                         crossAxisSpacing: Insets.sm,
+                        childAspectRatio: 1.2, // match choice_btn so it isn't squished
                         physics: const NeverScrollableScrollPhysics(),
                         children: [
                           for (var i = 0; i < 4; i++)
