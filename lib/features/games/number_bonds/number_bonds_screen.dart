@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/difficulty.dart';
@@ -289,10 +290,12 @@ class _NumberBondsScreenState extends State<NumberBondsScreen>
         if (_tapFxId > 0)
           _Spot(
             center: _tapPos,
-            child: Image.asset(_Nb.popRing, width: 90)
-                .animate(key: ValueKey('pr$_tapFxId'))
-                .scaleXY(begin: 0.3, end: 1.3, duration: 420.ms, curve: Curves.easeOut)
-                .fadeOut(delay: 140.ms, duration: 280.ms),
+            child: _Glow(
+              child: Image.asset(_Nb.popRing, width: 90)
+                  .animate(key: ValueKey('pr$_tapFxId'))
+                  .scaleXY(begin: 0.3, end: 1.3, duration: 420.ms, curve: Curves.easeOut)
+                  .fadeOut(delay: 140.ms, duration: 280.ms),
+            ),
           ),
         if (_correctFxId > 0) ...[
           // celebration fires on the target badge (the "đề"), not the empty gap
@@ -306,21 +309,27 @@ class _NumberBondsScreenState extends State<NumberBondsScreen>
                     .animate(key: ValueKey('cf$_correctFxId'))
                     .scaleXY(begin: 0.5, end: 1.1, duration: 520.ms, curve: Curves.easeOut)
                     .fadeOut(delay: 320.ms, duration: 420.ms),
-                Image.asset(_Nb.burst, width: 190)
-                    .animate(key: ValueKey('bu$_correctFxId'))
-                    .scaleXY(begin: 0.4, end: 1.1, duration: 340.ms, curve: Curves.easeOut)
-                    .fadeOut(delay: 200.ms, duration: 300.ms),
+                _Glow(
+                  child: Image.asset(_Nb.burst, width: 190)
+                      .animate(key: ValueKey('bu$_correctFxId'))
+                      .scaleXY(begin: 0.4, end: 1.1, duration: 340.ms, curve: Curves.easeOut)
+                      .fadeOut(delay: 200.ms, duration: 300.ms),
+                ),
                 if (combo >= 3)
-                  Image.asset(_Nb.spark, width: 220)
-                      .animate(key: ValueKey('sk$_correctFxId'))
-                      .fadeIn(duration: 110.ms)
-                      .scaleXY(begin: 0.6, end: 1.1, duration: 320.ms)
-                      .fadeOut(delay: 200.ms, duration: 260.ms),
-                Image.asset(_Nb.sparkle, width: 66)
-                    .animate(key: ValueKey('sp$_correctFxId'))
-                    .scaleXY(begin: 0.2, end: 1, duration: 320.ms, curve: Curves.easeOutBack)
-                    .then(delay: 120.ms)
-                    .fadeOut(duration: 240.ms),
+                  _Glow(
+                    child: Image.asset(_Nb.spark, width: 220)
+                        .animate(key: ValueKey('sk$_correctFxId'))
+                        .fadeIn(duration: 110.ms)
+                        .scaleXY(begin: 0.6, end: 1.1, duration: 320.ms)
+                        .fadeOut(delay: 200.ms, duration: 260.ms),
+                  ),
+                _Glow(
+                  child: Image.asset(_Nb.sparkle, width: 66)
+                      .animate(key: ValueKey('sp$_correctFxId'))
+                      .scaleXY(begin: 0.2, end: 1, duration: 320.ms, curve: Curves.easeOutBack)
+                      .then(delay: 120.ms)
+                      .fadeOut(duration: 240.ms),
+                ),
               ],
             ),
           ),
@@ -330,10 +339,12 @@ class _NumberBondsScreenState extends State<NumberBondsScreen>
               alignment: Alignment.center,
               clipBehavior: Clip.none,
               children: [
-                Image.asset(_Nb.ring, width: 120)
-                    .animate(key: ValueKey('rg$_correctFxId'))
-                    .scaleXY(begin: 0.4, end: 1.3, duration: 440.ms, curve: Curves.easeOut)
-                    .fadeOut(delay: 180.ms, duration: 300.ms),
+                _Glow(
+                  child: Image.asset(_Nb.ring, width: 120)
+                      .animate(key: ValueKey('rg$_correctFxId'))
+                      .scaleXY(begin: 0.4, end: 1.3, duration: 440.ms, curve: Curves.easeOut)
+                      .fadeOut(delay: 180.ms, duration: 300.ms),
+                ),
                 Image.asset(_Nb.check, width: 54)
                     .animate(key: ValueKey('ck$_correctFxId'))
                     .scaleXY(begin: 0.3, end: 1, duration: 320.ms, curve: Curves.easeOutBack)
@@ -356,11 +367,13 @@ class _NumberBondsScreenState extends State<NumberBondsScreen>
         if (_comboFxId > 0)
           Align(
             alignment: Alignment.center,
-            child: Image.asset(_Nb.shimmer,
-                    width: MediaQuery.of(context).size.width * 1.2,
-                    fit: BoxFit.fitWidth)
-                .animate(key: ValueKey('shim$_comboFxId'))
-                .slideX(begin: -1.4, end: 1.4, duration: 760.ms, curve: Curves.easeInOut),
+            child: _Glow(
+              child: Image.asset(_Nb.shimmer,
+                      width: MediaQuery.of(context).size.width * 1.2,
+                      fit: BoxFit.fitWidth)
+                  .animate(key: ValueKey('shim$_comboFxId'))
+                  .slideX(begin: -1.4, end: 1.4, duration: 760.ms, curve: Curves.easeInOut),
+            ),
           ),
       ],
     );
@@ -382,6 +395,27 @@ class _Spot extends StatelessWidget {
       height: 280,
       child: Center(child: child),
     );
+  }
+}
+
+/// Composites the glow FX additively (screen blend) so the sprite's
+/// semi-transparent dark halo only *adds light* and never darkens / "cuts into"
+/// the target ring or the tiles it sweeps over. No clip → scaled-up FX is kept.
+class _Glow extends SingleChildRenderObjectWidget {
+  const _Glow({required Widget super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _GlowBox();
+}
+
+class _GlowBox extends RenderProxyBox {
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final child = this.child;
+    if (child == null) return;
+    context.canvas.saveLayer(null, Paint()..blendMode = BlendMode.screen);
+    context.paintChild(child, offset);
+    context.canvas.restore();
   }
 }
 
